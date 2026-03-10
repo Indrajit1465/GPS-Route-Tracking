@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register — Live Route Tracker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            background-size: 400% 400%;
+            animation: gradientShift 12s ease infinite;
+            overflow: hidden;
+        }
+
+        @keyframes gradientShift {
+            0%   { background-position: 0% 50%; }
+            50%  { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        body::before, body::after {
+            content: '';
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.35;
+            z-index: 0;
+            pointer-events: none;
+        }
+        body::before {
+            width: 420px; height: 420px;
+            background: radial-gradient(circle, #2cb67d, transparent 70%);
+            top: -80px; right: -100px;
+            animation: floatOrb1 9s ease-in-out infinite alternate;
+        }
+        body::after {
+            width: 350px; height: 350px;
+            background: radial-gradient(circle, #7f5af0, transparent 70%);
+            bottom: -60px; left: -80px;
+            animation: floatOrb2 11s ease-in-out infinite alternate;
+        }
+        @keyframes floatOrb1 {
+            0%   { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(-60px, 80px) scale(1.15); }
+        }
+        @keyframes floatOrb2 {
+            0%   { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(50px, -70px) scale(1.1); }
+        }
+
+        .auth-card {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 440px;
+            padding: 44px 40px;
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            animation: cardIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+        @keyframes cardIn {
+            0% { opacity: 0; transform: translateY(30px) scale(0.96); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .auth-card .logo {
+            text-align: center;
+            margin-bottom: 8px;
+        }
+        .auth-card .logo .icon {
+            width: 56px; height: 56px;
+            background: linear-gradient(135deg, #2cb67d, #7f5af0);
+            border-radius: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: #fff;
+            margin-bottom: 12px;
+            box-shadow: 0 4px 20px rgba(44, 182, 125, 0.3);
+        }
+
+        .auth-card h1 {
+            text-align: center;
+            color: #fffffe;
+            font-size: 1.6rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .auth-card .subtitle {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.88rem;
+            margin-bottom: 28px;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 22px;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 16px 16px 8px;
+            font-size: 0.95rem;
+            font-family: 'Inter', sans-serif;
+            color: #fffffe;
+            background: rgba(255, 255, 255, 0.07);
+            border: 1.5px solid rgba(255, 255, 255, 0.12);
+            border-radius: 14px;
+            outline: none;
+            transition: border-color 0.3s, box-shadow 0.3s, background 0.3s;
+        }
+        .input-group input:focus {
+            border-color: #2cb67d;
+            box-shadow: 0 0 0 3px rgba(44, 182, 125, 0.2);
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .input-group input.input-error {
+            border-color: #ff6b6b;
+            box-shadow: 0 0 0 3px rgba(255, 73, 73, 0.15);
+        }
+        .input-group label {
+            position: absolute;
+            left: 16px; top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 0.92rem;
+            pointer-events: none;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .input-group input:focus ~ label,
+        .input-group input:not(:placeholder-shown) ~ label {
+            top: 10px;
+            transform: translateY(0);
+            font-size: 0.7rem;
+            color: #2cb67d;
+            letter-spacing: 0.04em;
+        }
+
+        /* Password strength bar */
+        .strength-bar {
+            height: 4px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 2px;
+            margin-top: 8px;
+            overflow: hidden;
+            transition: opacity 0.3s;
+        }
+        .strength-bar .fill {
+            height: 100%;
+            width: 0%;
+            border-radius: 2px;
+            transition: width 0.4s ease, background 0.4s ease;
+        }
+        .strength-label {
+            font-size: 0.72rem;
+            color: rgba(255,255,255,0.4);
+            margin-top: 4px;
+            min-height: 16px;
+            transition: color 0.3s;
+        }
+
+        .match-hint {
+            font-size: 0.75rem;
+            margin-top: 6px;
+            min-height: 16px;
+        }
+        .match-hint.match { color: #2cb67d; }
+        .match-hint.no-match { color: #ff6b6b; }
+
+        .btn-primary {
+            width: 100%;
+            padding: 15px;
+            font-size: 1rem;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            color: #fff;
+            background: linear-gradient(135deg, #2cb67d, #7f5af0);
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.3s;
+            box-shadow: 0 4px 20px rgba(44, 182, 125, 0.3);
+            position: relative;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(44, 182, 125, 0.45);
+        }
+        .btn-primary:active {
+            transform: translateY(0) scale(0.98);
+        }
+        .btn-primary::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .btn-primary:hover::after { opacity: 1; }
+
+        .error-msg {
+            background: rgba(255, 73, 73, 0.12);
+            border: 1px solid rgba(255, 73, 73, 0.3);
+            color: #ff6b6b;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            margin-bottom: 18px;
+            animation: fadeShake 0.4s ease;
+        }
+        @keyframes fadeShake {
+            0%   { opacity: 0; transform: translateX(-8px); }
+            30%  { transform: translateX(6px); }
+            60%  { transform: translateX(-4px); }
+            100% { opacity: 1; transform: translateX(0); }
+        }
+
+        .footer-link {
+            text-align: center;
+            margin-top: 24px;
+            color: rgba(255, 255, 255, 0.45);
+            font-size: 0.85rem;
+        }
+        .footer-link a {
+            color: #2cb67d;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.2s;
+        }
+        .footer-link a:hover { color: #7f5af0; }
+
+        @media (max-width: 480px) {
+            .auth-card { margin: 16px; padding: 36px 24px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="auth-card">
+        <div class="logo">
+            <div class="icon">🚀</div>
+        </div>
+        <h1>Create Account</h1>
+        <p class="subtitle">Join Live Route Tracker today</p>
+
+        {% if error %}
+            <div class="error-msg">{{ error }}</div>
+        {% endif %}
+
+        <form method="POST" id="registerForm" autocomplete="off">
+            {% csrf_token %}
+
+            <div class="input-group">
+                <input type="text" id="username" name="username" placeholder=" " required
+                       value="{{ username|default:'' }}" autofocus>
+                <label for="username">Username</label>
+            </div>
+
+            <div class="input-group">
+                <input type="email" id="email" name="email" placeholder=" "
+                       value="{{ email|default:'' }}">
+                <label for="email">Email (optional)</label>
+            </div>
+
+            <div class="input-group">
+                <input type="password" id="password1" name="password1" placeholder=" " required>
+                <label for="password1">Password</label>
+                <div class="strength-bar"><div class="fill" id="strengthFill"></div></div>
+                <div class="strength-label" id="strengthLabel"></div>
+            </div>
+
+            <div class="input-group">
+                <input type="password" id="password2" name="password2" placeholder=" " required>
+                <label for="password2">Confirm Password</label>
+                <div class="match-hint" id="matchHint"></div>
+            </div>
+
+            <button type="submit" class="btn-primary" id="submitBtn">Create Account</button>
+        </form>
+
+        <div class="footer-link">
+            Already have an account? <a href="{% url 'login' %}">Sign In</a>
+        </div>
+    </div>
+
+    <script>
+    (function(){
+        const pw1   = document.getElementById('password1');
+        const pw2   = document.getElementById('password2');
+        const fill  = document.getElementById('strengthFill');
+        const label = document.getElementById('strengthLabel');
+        const hint  = document.getElementById('matchHint');
+
+        // ---- password strength ----
+        pw1.addEventListener('input', function(){
+            const v = pw1.value;
+            let score = 0;
+            if(v.length >= 4) score++;
+            if(v.length >= 8) score++;
+            if(/[A-Z]/.test(v) && /[a-z]/.test(v)) score++;
+            if(/\d/.test(v)) score++;
+            if(/[^A-Za-z0-9]/.test(v)) score++;
+
+            const levels = [
+                { w:'0%',  c:'transparent',label:'', color:'rgba(255,255,255,0.4)' },
+                { w:'20%', c:'#ff6b6b',    label:'Very weak', color:'#ff6b6b' },
+                { w:'40%', c:'#ff9f43',    label:'Weak',      color:'#ff9f43' },
+                { w:'60%', c:'#feca57',    label:'Fair',      color:'#feca57' },
+                { w:'80%', c:'#48dbfb',    label:'Strong',    color:'#48dbfb' },
+                { w:'100%',c:'#2cb67d',    label:'Very strong',color:'#2cb67d' }
+            ];
+            const l = levels[score];
+            fill.style.width      = l.w;
+            fill.style.background = l.c;
+            label.textContent     = v ? l.label : '';
+            label.style.color     = l.color;
+
+            checkMatch();
+        });
+
+        // ---- password match ----
+        pw2.addEventListener('input', checkMatch);
+
+        function checkMatch(){
+            const v1 = pw1.value, v2 = pw2.value;
+            if(!v2){ hint.textContent=''; pw2.classList.remove('input-error'); return; }
+            if(v1 === v2){
+                hint.textContent = '✓ Passwords match';
+                hint.className   = 'match-hint match';
+                pw2.classList.remove('input-error');
+            } else {
+                hint.textContent = '✗ Passwords do not match';
+                hint.className   = 'match-hint no-match';
+                pw2.classList.add('input-error');
+            }
+        }
+    })();
+    </script>
+
+</body>
+</html>

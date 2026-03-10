@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Live Route Tracker (Offline Ready)</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        #map {
+            height: 500px;
+            width: 100%;
+            margin: 20px 0;
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #16161a;
+            color: #fffffe;
+        }
+
+        .content {
+            padding: 20px 28px;
+        }
+
+        button {
+            margin: 5px;
+            padding: 10px 20px;
+            font-size: 16px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            color: #fff;
+            background: linear-gradient(135deg, #7f5af0, #2cb67d);
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.3s;
+            box-shadow: 0 2px 12px rgba(127, 90, 240, 0.25);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(127, 90, 240, 0.4);
+        }
+
+        button:active {
+            transform: scale(0.97);
+        }
+
+        button:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* -------- Nav Bar -------- */
+        .navbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 28px;
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .navbar .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #fffffe;
+        }
+
+        .navbar .brand .icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #7f5af0, #2cb67d);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .navbar .user-area {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .navbar .user-badge {
+            background: rgba(127, 90, 240, 0.15);
+            border: 1px solid rgba(127, 90, 240, 0.25);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #c4b5fd;
+        }
+
+        .navbar .logout-btn {
+            padding: 8px 18px;
+            font-size: 0.82rem;
+            background: rgba(255, 73, 73, 0.12);
+            border: 1px solid rgba(255, 73, 73, 0.25);
+            color: #ff6b6b;
+            border-radius: 10px;
+            box-shadow: none;
+            transition: background 0.2s, transform 0.2s;
+            margin: 0;
+        }
+
+        .navbar .logout-btn:hover {
+            background: rgba(255, 73, 73, 0.25);
+            transform: translateY(-1px);
+            box-shadow: none;
+        }
+
+        h1,
+        h2 {
+            color: #fffffe;
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            margin-bottom: 10px;
+        }
+
+        #offlineData {
+            background: rgba(255, 255, 255, 0.04);
+            padding: 12px;
+            border-radius: 12px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        #instructions {
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 12px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        /* -------- History Panel -------- */
+        .history-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .history-overlay.active {
+            display: flex;
+        }
+
+        .history-panel {
+            width: 90%;
+            max-width: 520px;
+            max-height: 80vh;
+            background: #1e1e24;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            animation: panelIn 0.35s ease;
+        }
+
+        @keyframes panelIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.97);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .history-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .history-header h2 {
+            margin: 0;
+            font-size: 1.15rem;
+        }
+
+        .history-close {
+            background: rgba(255, 255, 255, 0.08);
+            border: none;
+            color: #fff;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+            box-shadow: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .history-close:hover {
+            background: rgba(255, 73, 73, 0.25);
+            transform: none;
+            box-shadow: none;
+        }
+
+        .history-body {
+            padding: 16px 24px;
+            overflow-y: auto;
+            max-height: calc(80vh - 70px);
+        }
+
+        .history-date-group {
+            margin-bottom: 20px;
+        }
+
+        .history-date-label {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #7f5af0;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 10px;
+        }
+
+        .history-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            padding: 14px 18px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: background 0.2s;
+        }
+
+        .history-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .history-card .info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .history-card .info .time {
+            font-size: 0.92rem;
+            font-weight: 600;
+            color: #fffffe;
+        }
+
+        .history-card .info .meta {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .history-card .view-btn {
+            padding: 7px 14px;
+            font-size: 0.78rem;
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+            box-shadow: 0 2px 10px rgba(245, 158, 11, 0.25);
+            border-radius: 10px;
+            margin: 0;
+        }
+
+        .history-card .view-btn:hover {
+            box-shadow: 0 4px 16px rgba(245, 158, 11, 0.4);
+        }
+
+        .history-empty {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.35);
+            padding: 40px 0;
+            font-size: 0.9rem;
+        }
+    </style>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.marker.slideto@0.2.0/Leaflet.Marker.SlideTo.js"></script>
+</head>
+
+<body>
+
+    <!-- Nav Bar -->
+    <nav class="navbar">
+        <div class="brand">
+            <div class="icon">📍</div>
+            Live Route Tracker
+        </div>
+        <div class="user-area">
+            <span class="user-badge">👤 {{ user.username }}</span>
+            <a href="{% url 'logout' %}" class="logout-btn"
+                style="text-decoration:none;display:inline-block;">Logout</a>
+        </div>
+    </nav>
+
+    <div class="content">
+
+        <h1>GPS Route Tracker</h1>
+
+        <button id="startBtn">Start Tracking</button>
+        <button id="stopBtn" disabled>Stop Tracking</button>
+
+        <div id="map"></div>
+
+        <button onclick="viewOffline()">View Offline Routes</button>
+        <button onclick="viewHistory()">Route History</button>
+
+        <div id="offlineData" style="font-size:12px; white-space:pre-wrap; margin-top:10px;">
+        </div>
+
+        <h2>Turn-by-Turn Instructions</h2>
+
+        <div id="instructions"
+            style="white-space: pre-line; border:1px solid #ccc; padding:10px; height:200px; overflow-y:auto;">
+        </div>
+
+    </div><!-- end .content -->
+
+    <!-- History Overlay -->
+    <div class="history-overlay" id="historyOverlay">
+        <div class="history-panel">
+            <div class="history-header">
+                <h2>📋 Route History</h2>
+                <button class="history-close" onclick="closeHistory()">✕</button>
+            </div>
+            <div class="history-body" id="historyBody">
+                <div class="history-empty">Loading…</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+        // ================= BUTTONS =================
+        const startBtn = document.getElementById("startBtn");
+        const stopBtn = document.getElementById("stopBtn");
+
+        // ================= MAP =================
+        var map = L.map('map').setView([20.5937, 78.9629], 5);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png')
+            .addTo(map);
+
+        // ================= STATE =================
+        let route = [];
+        let rawBuffer = [];
+
+        let lockedRoadBearing = null;
+        let lastAcceptedPoint = null;
+
+        let markerLive = null;
+        let livePolyline = null;
+        let finalPolyline = null;
+        let watchID = null;
+        let startMarker = null;
+        let stopMarker = null;
+
+        const SNAP_CHUNK_SIZE = 3;
+
+
+        // ================= SAFE INDEXED DB =================
+        let dbPromise = new Promise((resolve, reject) => {
+
+            if (!window.indexedDB) {
+                console.warn("IndexedDB not supported");
+                resolve(null);
+                return;
+            }
+
+            const request = indexedDB.open("RouteTrackerDB", 1);
+
+            request.onupgradeneeded = function (event) {
+                const db = event.target.result;
+
+                if (!db.objectStoreNames.contains("offlineRoutes")) {
+                    db.createObjectStore("offlineRoutes", {
+                        keyPath: "id",
+                        autoIncrement: true
+                    });
+                }
+            };
+
+            request.onsuccess = function (event) {
+                resolve(event.target.result);
+            };
+
+            request.onerror = function () {
+                console.error("IndexedDB failed to open");
+                resolve(null);
+            };
+        });
+
+
+        // ================= OFFLINE SAVE =================
+        async function saveOffline(routeData) {
+
+            const db = await dbPromise;
+
+            if (!db) {
+                console.warn("No DB available.");
+                return;
+            }
+
+            return new Promise((resolve, reject) => {
+
+                const tx = db.transaction("offlineRoutes", "readwrite");
+                const store = tx.objectStore("offlineRoutes");
+
+                const request = store.add({
+                    route: routeData,
+                    timestamp: Date.now()
+                });
+
+                request.onsuccess = function () {
+                    console.log("Saved offline successfully");
+                    alert("Offline Saved!");
+                    resolve();
+                };
+
+                request.onerror = function () {
+                    console.error("Failed to save offline");
+                    reject();
+                };
+            });
+        }
+
+
+        // ================= COOKIE =================
+        function getCookie(name) {
+
+            let cookieValue = null;
+
+            if (document.cookie && document.cookie !== '') {
+
+                const cookies = document.cookie.split(';');
+
+                for (let cookie of cookies) {
+
+                    cookie = cookie.trim();
+
+                    if (cookie.startsWith(name + '=')) {
+                        cookieValue = decodeURIComponent(
+                            cookie.substring(name.length + 1)
+                        );
+                        break;
+                    }
+                }
+            }
+
+            return cookieValue;
+        }
+
+
+        // ================= ONLINE SAVE =================
+        async function saveOnline(routeData) {
+
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 4000);
+
+            try {
+
+                const response = await fetch("/save_route/", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": getCookie("csrftoken")
+                    },
+                    body: JSON.stringify({ route: routeData }),
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeout);
+
+                if (!response.ok)
+                    throw new Error("Network response failed");
+
+                const data = await response.json();
+
+                if (data.status !== "ok")
+                    throw new Error("Backend returned error");
+
+                console.log("Saved online successfully");
+
+            } catch (err) {
+                clearTimeout(timeout);
+                throw err;
+            }
+        }
+
+
+        // ================= FINAL SAVE CONTROLLER =================
+        async function finalSave(routeData) {
+
+            console.log("Final route length:", routeData.length);
+
+            if (routeData.length < 2) {
+                console.log("Route too short. Not saving.");
+                return;
+            }
+
+            try {
+                console.log("Trying online save...");
+                await saveOnline(routeData);
+                console.log("Online save success.");
+            }
+            catch (err) {
+                console.warn("Online save failed:", err.message);
+                console.warn("Saving offline instead...");
+                await saveOffline(routeData);
+                console.log("Offline save completed.");
+            }
+        }
+
+
+        // ================= DRAW =================
+        function redrawFinal() {
+
+            if (finalPolyline)
+                map.removeLayer(finalPolyline);
+
+            if (route.length > 1)
+                finalPolyline = L.polyline(route, { color: 'blue', weight: 6, opacity: 0.8 }).addTo(map);
+        }
+
+        function redrawLive() {
+
+            if (livePolyline)
+                map.removeLayer(livePolyline);
+
+            const combined = route.concat(rawBuffer);
+
+            if (combined.length > 1)
+                livePolyline = L.polyline(combined, { color: 'blue', weight: 6, opacity: 0.8, dashArray: '5, 10' }).addTo(map);
+        }
+
+
+        // ================= MOTION FILTER =================
+        class MotionFilter {
+
+            constructor() {
+                this.lat = null;
+                this.lon = null;
+
+                this.vLat = 0;
+                this.vLon = 0;
+
+                this.posGain = 0.45;
+                this.velGain = 0.15;
+
+                this.damping = 0.80;
+            }
+
+            reset() {
+                this.lat = null;
+                this.lon = null;
+                this.vLat = 0;
+                this.vLon = 0;
+            }
+
+            update(lat, lon, acc) {
+
+                if (this.lat === null) {
+                    this.lat = lat;
+                    this.lon = lon;
+                    return [lat, lon];
+                }
+
+                if (acc < 6) this.posGain = 0.6;
+                else if (acc < 12) this.posGain = 0.4;
+                else this.posGain = 0.15; // Strongly distrust bad GPS
+
+                // prediction
+                let pLat = this.lat + this.vLat;
+                let pLon = this.lon + this.vLon;
+
+                // residual
+                let rLat = lat - pLat;
+                let rLon = lon - pLon;
+
+                // correction
+                this.lat = pLat + this.posGain * rLat;
+                this.lon = pLon + this.posGain * rLon;
+
+                this.vLat += this.velGain * rLat;
+                this.vLon += this.velGain * rLon;
+
+                // velocity damping
+                this.vLat *= this.damping;
+                this.vLon *= this.damping;
+
+                return [this.lat, this.lon];
+            }
+        }
+        const filter = new MotionFilter();
+
+        // ================= BEARING =================
+        function bearing(a, b) {
+
+            const lat1 = a[0] * Math.PI / 180;
+            const lat2 = b[0] * Math.PI / 180;
+            const dLon = (b[1] - a[1]) * Math.PI / 180;
+
+            const y = Math.sin(dLon) * Math.cos(lat2);
+            const x = Math.cos(lat1) * Math.sin(lat2) -
+                Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+
+            return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+        }
+
+        // ================= DISTANCE FILTER =================
+        function distance(a, b) {
+
+            const R = 6371000;
+
+            const dLat = (b[0] - a[0]) * Math.PI / 180;
+            const dLon = (b[1] - a[1]) * Math.PI / 180;
+
+            const lat1 = a[0] * Math.PI / 180;
+            const lat2 = b[0] * Math.PI / 180;
+
+            const x =
+                Math.sin(dLat / 2) ** 2 +
+                Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
+
+            return 2 * R * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
+        }
+
+        // ================= heading func =================
+        function headingStable(prev, curr) {
+
+            if (!prev) return true;
+
+            const newBearing = bearing(prev, curr);
+
+            if (lockedRoadBearing === null) {
+                lockedRoadBearing = newBearing;
+                return true;
+            }
+
+            let diff = Math.abs(newBearing - lockedRoadBearing);
+
+            if (diff > 180) diff = 360 - diff;
+
+            if (diff < 110) {
+
+                lockedRoadBearing =
+                    0.8 * lockedRoadBearing + 0.2 * newBearing;
+
+                return true;
+            }
+
+            lockedRoadBearing = newBearing;
+            return true;
+        }
+
+        // ================= START =================
+        startBtn.onclick = function () {
+
+            route = [];
+            rawBuffer = [];
+            filter.reset();
+
+            lockedRoadBearing = null;
+            lastAcceptedPoint = null;
+
+            if (startMarker) map.removeLayer(startMarker);
+            if (stopMarker) map.removeLayer(stopMarker);
+            if (finalPolyline) map.removeLayer(finalPolyline);
+            if (livePolyline) map.removeLayer(livePolyline);
+            if (markerLive) map.removeLayer(markerLive);
+
+            startMarker = null;
+            stopMarker = null;
+
+            watchID = navigator.geolocation.watchPosition(
+
+                pos => {
+
+                    const acc = pos.coords.accuracy;
+
+                    if (acc > 20)
+                        return;
+
+                    let p = filter.update(
+                        pos.coords.latitude,
+                        pos.coords.longitude,
+                        acc
+                    );
+
+                    if (!p || isNaN(p[0]) || isNaN(p[1])) {
+                        console.log("Filter error — using raw GPS");
+                        p = [pos.coords.latitude, pos.coords.longitude];
+                    }
+
+                    // ================= GPS JUMP FILTER =================
+                    if (lastAcceptedPoint) {
+
+                        let dist = distance(lastAcceptedPoint, p);
+
+                        if (dist > 40) {
+                            console.log("GPS jump rejected");
+                            return;
+                        }
+
+                    }
+
+                    let accepted = headingStable(lastAcceptedPoint, p);
+
+                    if (accepted) {
+
+                        if (!markerLive) {
+                            markerLive = L.marker(p).addTo(map);
+                            map.setView(p, 17);
+                        }
+                        else {
+                            markerLive.setLatLng(p);
+                        }
+
+                        rawBuffer.push(p);
+                        lastAcceptedPoint = p;
+
+                    }
+                    else {
+                        console.log("Heading rejected noisy point");
+                    }
+
+                    if (accepted && route.length === 0 && !startMarker) {
+                        startMarker = L.marker(p)
+                            .addTo(map)
+                            .bindPopup("Tracking started Here")
+                            .openPopup();
+                    }
+
+                    if (rawBuffer.length >= SNAP_CHUNK_SIZE) {
+                        snapAndAppend([...rawBuffer]);
+                        rawBuffer = [];
+                    }
+
+                    redrawLive();
+                },
+
+                err => alert(err.message),
+
+                {
+                    enableHighAccuracy: true,
+                    maximumAge: 0,
+                    timeout: 9000
+                }
+            );
+
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+        };
+
+
+        // ================= STOP =================
+        stopBtn.onclick = async function () {
+
+            lockedRoadBearing = null;
+            lastAcceptedPoint = null;
+
+
+            navigator.geolocation.clearWatch(watchID);
+
+            watchID = null;
+
+            if (rawBuffer.length > 0) {
+                await snapAndAppend([...rawBuffer]);
+                rawBuffer = [];
+            }
+
+            if (route.length > 0) {
+
+                const last = route.at(-1);
+
+                stopMarker = L.marker(last)
+                    .addTo(map)
+                    .bindPopup("Tracking Stopped Here")
+                    .openPopup();
+            }
+
+            console.log(route);
+
+            await finalSave(route);
+
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+        };
+
+
+        // ================= AUTO SYNC =================
+        window.addEventListener("online", async function () {
+            const db = await dbPromise;
+            if (!db) return;
+            
+            // Read all offline routes
+            const tx = db.transaction("offlineRoutes", "readonly");
+            const store = tx.objectStore("offlineRoutes");
+            const request = store.getAll();
+
+            request.onsuccess = async function () {
+                const allRoutes = request.result;
+                for (let entry of allRoutes) {
+                    try {
+                        await saveOnline(entry.route);
+                        
+                        // Transaction is auto-closed by IndexedDB during the await.
+                        // We MUST open a new transaction to delete the synced route.
+                        const delTx = db.transaction("offlineRoutes", "readwrite");
+                        delTx.objectStore("offlineRoutes").delete(entry.id);
+                        
+                        console.log("Synced route id:", entry.id);
+                    }
+                    catch {
+                        console.log("Sync failed, will retry later");
+                        break;
+                    }
+                }
+            };
+        });
+
+        // ================= PERIODIC AUTO SYNC (OPTION B) =================
+        async function periodicSync() {
+            const db = await dbPromise;
+            if (!db) return;
+
+            // Read all offline routes
+            const tx = db.transaction("offlineRoutes", "readonly");
+            const store = tx.objectStore("offlineRoutes");
+
+            const request = store.getAll();
+
+            request.onsuccess = async function () {
+                const allRoutes = request.result;
+
+                for (let entry of allRoutes) {
+                    try {
+                        await saveOnline(entry.route);   // try sending to server
+                        
+                        // Transaction is auto-closed by IndexedDB during the await.
+                        // We MUST open a new transaction to delete the synced route.
+                        const delTx = db.transaction("offlineRoutes", "readwrite");
+                        delTx.objectStore("offlineRoutes").delete(entry.id);
+                        
+                        console.log("Periodic sync success for route id:", entry.id);
+                    } catch (err) {
+                        console.log("Periodic sync failed for route id:", entry.id);
+                        // leave it in IndexedDB for next attempt
+                    }
+                }
+            };
+        }
+
+        // Run periodic sync every 20 seconds
+        setInterval(periodicSync, 20000);
+
+        // ================= REAL-TIME SNAP =================
+        let snapBusy = false;
+
+        async function snapAndAppend(chunk) {
+
+            if (snapBusy) {
+                route.push(...chunk);
+                redrawFinal();
+                return;
+            }
+
+            snapBusy = true;
+
+            try {
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 5000);
+
+                const res = await fetch("/snap_chunk/", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": getCookie("csrftoken")
+                    },
+                    body: JSON.stringify({ points: chunk }),
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeout);
+
+                if (!res.ok) throw new Error("snap failed");
+
+                const data = await res.json();
+                const snapped = data.snapped && data.snapped.length > 0 ? data.snapped : chunk;
+
+                route.push(...snapped);
+                console.log("Chunk snapped:", chunk.length, "→", snapped.length, "pts");
+
+                // --- NEW: Snap the blue dot to the last snapped road point ---
+                if (snapped.length > 0 && markerLive) {
+                    const snappedLastPos = snapped[snapped.length - 1];
+                    markerLive.setLatLng(snappedLastPos);
+                    map.panTo(snappedLastPos);
+                }
+
+            } catch (err) {
+                console.warn("Snap failed, using raw:", err.message);
+                route.push(...chunk);
+            }
+
+            snapBusy = false;
+            redrawFinal();
+        }
+
+
+        // ================= VIEW OFFLINE =================
+        async function viewOffline() {
+
+            const db = await dbPromise;
+
+            if (!db) {
+                alert("IndexedDB not available");
+                return;
+            }
+
+            const tx = db.transaction("offlineRoutes", "readonly");
+            const store = tx.objectStore("offlineRoutes");
+            const request = store.getAll();
+
+            request.onsuccess = function () {
+
+                const data = request.result;
+
+                if (data.length === 0) {
+                    document.getElementById("offlineData").innerText =
+                        "No offline routes stored.";
+                    return;
+                }
+
+                let output = "";
+
+                data.forEach((item, index) => {
+
+                    output += "Route " + (index + 1) + "\n";
+                    output += "Saved at: " +
+                        new Date(item.timestamp).toLocaleString() + "\n";
+                    output += "Total Points: " +
+                        item.route.length + "\n";
+                    output += JSON.stringify(item.route) + "\n\n";
+                });
+
+                document.getElementById("offlineData").innerText = output;
+            };
+        }
+
+
+        // ================= ROUTE HISTORY =================
+        let historyPolyline = null;
+        let historyData = [];       // cache fetched data
+
+        function closeHistory() {
+            document.getElementById('historyOverlay').classList.remove('active');
+        }
+
+        async function viewHistory() {
+
+            const overlay = document.getElementById('historyOverlay');
+            const body = document.getElementById('historyBody');
+
+            overlay.classList.add('active');
+            body.innerHTML = '<div class="history-empty">Loading…</div>';
+
+            try {
+                const res = await fetch('/route_history/');
+                if (!res.ok) throw new Error('fetch failed');
+
+                const data = await res.json();
+                historyData = data.routes || [];
+
+                if (historyData.length === 0) {
+                    body.innerHTML = '<div class="history-empty">No routes recorded yet.</div>';
+                    return;
+                }
+
+                // Group by date
+                const groups = {};
+                historyData.forEach((r, i) => {
+                    if (!groups[r.date]) groups[r.date] = [];
+                    groups[r.date].push({ ...r, _idx: i });
+                });
+
+                let html = '';
+                for (const [date, routes] of Object.entries(groups)) {
+                    html += '<div class="history-date-group">';
+                    html += '<div class="history-date-label">📅 ' + date + '</div>';
+
+                    for (const r of routes) {
+                        html += '<div class="history-card">';
+                        html += '  <div class="info">';
+                        html += '    <span class="time">🕐 ' + r.time + '</span>';
+                        html += '    <span class="meta">' + r.total_points + ' GPS points</span>';
+                        html += '  </div>';
+                        html += '  <button class="view-btn" onclick="showRouteOnMap(' + r._idx + ')">View on Map</button>';
+                        html += '</div>';
+                    }
+
+                    html += '</div>';
+                }
+
+                body.innerHTML = html;
+
+            } catch (err) {
+                body.innerHTML = '<div class="history-empty">Failed to load history.</div>';
+                console.error(err);
+            }
+        }
+
+        function showRouteOnMap(idx) {
+
+            const r = historyData[idx];
+            if (!r || !r.route_points) return;
+
+            // Remove previous history polyline
+            if (historyPolyline) {
+                map.removeLayer(historyPolyline);
+                historyPolyline = null;
+            }
+
+            // Draw in orange to distinguish from live route
+            historyPolyline = L.polyline(r.route_points, {
+                color: '#f59e0b',
+                weight: 5,
+                opacity: 0.85
+            }).addTo(map);
+
+            map.fitBounds(historyPolyline.getBounds(), { padding: [40, 40] });
+
+            // Close the panel
+            closeHistory();
+        }
+
+    </script>
+
+</body>
+
+</html>
