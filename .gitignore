@@ -43,3 +43,6 @@ venv.bak/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Request logs
+logs/

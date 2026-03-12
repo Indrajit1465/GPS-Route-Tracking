@@ -3,154 +3,421 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Live Route Tracker (Offline Ready)</title>
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
 
     <style>
-        #map {
-            height: 500px;
-            width: 100%;
-            margin: 20px 0;
-            border-radius: 16px;
-            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+        :root {
+            --primary: #2563EB;
+            --primary-dark: #1E40AF;
+            --danger: #EA4335;
+            --danger-dark: #c62828;
+            --accent: #F97316;
+            --bg-dark: #0f1117;
+            --bg-card: #1E293B;
+            --bg-card-hover: #334155;
+            --border: rgba(255, 255, 255, 0.12);
+            --text-primary: #F8FAFC;
+            --text-secondary: #94A3B8;
+            --success: #34A853;
+            --radius: 8px;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
 
         body {
-            font-family: 'Inter', sans-serif;
-            margin: 0;
-            padding: 0;
-            background: #16161a;
-            color: #fffffe;
-        }
-
-        .content {
-            padding: 20px 28px;
-        }
-
-        button {
-            margin: 5px;
-            padding: 10px 20px;
-            font-size: 16px;
-            font-family: 'Inter', sans-serif;
-            font-weight: 600;
-            color: #fff;
-            background: linear-gradient(135deg, #7f5af0, #2cb67d);
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.3s;
-            box-shadow: 0 2px 12px rgba(127, 90, 240, 0.25);
-        }
-
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(127, 90, 240, 0.4);
-        }
-
-        button:active {
-            transform: scale(0.97);
-        }
-
-        button:disabled {
-            opacity: 0.45;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            font-family: 'Fira Sans';
+            min-height: 100vh;
         }
 
         /* -------- Nav Bar -------- */
         .navbar {
+            background: rgba(15, 17, 23, 0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 24px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 14px 28px;
-            background: rgba(255, 255, 255, 0.04);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
         }
 
-        .navbar .brand {
+        .navbar-brand {
             display: flex;
             align-items: center;
-            gap: 10px;
-            font-size: 1.15rem;
-            font-weight: 700;
-            color: #fffffe;
+            gap: 12px;
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
         }
 
-        .navbar .brand .icon {
+        .navbar-logo {
             width: 36px;
             height: 36px;
-            background: linear-gradient(135deg, #7f5af0, #2cb67d);
-            border-radius: 10px;
+            border-radius: var(--radius);
+            background: var(--primary);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 18px;
+            color: white;
+            box-shadow: 0 0 15px rgba(37, 99, 235, 0.3);
         }
 
-        .navbar .user-area {
+        .navbar-right {
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 16px;
         }
 
-        .navbar .user-badge {
-            background: rgba(127, 90, 240, 0.15);
-            border: 1px solid rgba(127, 90, 240, 0.25);
-            padding: 6px 16px;
-            border-radius: 20px;
-            font-size: 0.85rem;
+        .user-badge {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 8px 16px;
+            font-size: 14px;
+            font-family: 'Fira Code', monospace;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-logout {
+            background: rgba(234, 67, 53, 0.1);
+            border: 1px solid rgba(234, 67, 53, 0.3);
+            color: #fca5a5;
+            border-radius: 6px;
+            padding: 8px 16px;
+            font-size: 14px;
             font-weight: 500;
-            color: #c4b5fd;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
-        .navbar .logout-btn {
-            padding: 8px 18px;
-            font-size: 0.82rem;
-            background: rgba(255, 73, 73, 0.12);
-            border: 1px solid rgba(255, 73, 73, 0.25);
-            color: #ff6b6b;
-            border-radius: 10px;
-            box-shadow: none;
-            transition: background 0.2s, transform 0.2s;
-            margin: 0;
+        .btn-logout:hover {
+            background: var(--danger);
+            color: white;
+            border-color: var(--danger);
         }
 
-        .navbar .logout-btn:hover {
-            background: rgba(255, 73, 73, 0.25);
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 12px 16px;
+            }
+
+            .navbar-brand {
+                font-size: 16px;
+                gap: 8px;
+            }
+
+            .navbar-logo {
+                width: 28px;
+                height: 28px;
+            }
+
+            .navbar-logo svg {
+                width: 16px;
+                height: 16px;
+            }
+
+            .user-badge {
+                padding: 6px 10px;
+                font-size: 12px;
+                gap: 4px;
+            }
+
+            .user-badge svg {
+                width: 12px;
+                height: 12px;
+            }
+
+            .btn-logout {
+                padding: 6px 10px;
+                font-size: 12px;
+                gap: 4px;
+            }
+
+            .btn-logout svg {
+                width: 12px;
+                height: 12px;
+            }
+        }
+
+        /* -------- Main Container -------- */
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px 20px;
+        }
+
+        .page-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            letter-spacing: -0.3px;
+        }
+
+        /* -------- Stats Bar -------- */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Subtle accent line inside cards */
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .stat-label svg {
+            width: 14px;
+            height: 14px;
+            opacity: 0.7;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-family: 'Fira Code', monospace;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+        }
+
+        .status-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-dot.idle {
+            background: var(--text-secondary);
+        }
+
+        .status-dot.live {
+            background: var(--success);
+            box-shadow: 0 0 12px rgba(52, 168, 83, 0.6);
+            animation: pulse 1.5s infinite;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .status-dot.live {
+                animation: none;
+                /* Disable pulse if user prefers reduced motion */
+            }
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(52, 168, 83, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 6px rgba(52, 168, 83, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(52, 168, 83, 0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .stats-bar {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+
+            .stat-value {
+                font-size: 20px;
+            }
+        }
+
+        /* -------- Controls -------- */
+        .controls {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: var(--radius);
+            font-size: 14px;
+            font-weight: 500;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        .btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .btn-start {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+        }
+
+        .btn-start:not(:disabled):hover {
+            background: var(--primary-dark);
             transform: translateY(-1px);
-            box-shadow: none;
         }
 
-        h1,
-        h2 {
-            color: #fffffe;
+        .btn-stop {
+            background: var(--danger);
+            color: white;
+            box-shadow: 0 4px 12px rgba(234, 67, 53, 0.25);
         }
 
-        h1 {
-            font-size: 1.4rem;
-            margin-bottom: 10px;
+        .btn-stop:not(:disabled):hover {
+            background: var(--danger-dark);
+            transform: translateY(-1px);
         }
 
-        #offlineData {
-            background: rgba(255, 255, 255, 0.04);
-            padding: 12px;
-            border-radius: 12px;
-            color: rgba(255, 255, 255, 0.6);
+        .btn-outline {
+            background: transparent;
+            color: var(--text-primary);
+            border-color: var(--border);
         }
 
-        #instructions {
-            border: 1px solid rgba(255, 255, 255, 0.1) !important;
-            background: rgba(255, 255, 255, 0.04);
-            border-radius: 12px;
-            color: rgba(255, 255, 255, 0.7);
+        .btn-outline:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        @media (max-width: 767px) {
+            .controls {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+
+        /* -------- Map Wrapper -------- */
+        .map-wrapper {
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            margin-bottom: 16px;
+        }
+
+        #map {
+            width: 100%;
+            height: 65vh;
+            z-index: 1;
+        }
+
+        @media (min-width: 768px) and (max-width: 1199px) {
+            #map {
+                height: 70vh;
+            }
+        }
+
+        @media (min-width: 1200px) {
+            #map {
+                height: 78vh;
+            }
+        }
+
+        /* -------- Instructions -------- */
+        .instructions-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-top: 16px;
+        }
+
+        .instructions-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .instructions-body {
+            min-height: 80px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            line-height: 1.6;
+            overflow-y: auto;
+            white-space: pre-line;
         }
 
         /* -------- History Panel -------- */
@@ -159,33 +426,61 @@
             position: fixed;
             inset: 0;
             z-index: 9999;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(6px);
-            -webkit-backdrop-filter: blur(6px);
+            background: rgba(15, 17, 23, 0.85);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
             justify-content: center;
             align-items: center;
         }
 
         .history-overlay.active {
             display: flex;
+            animation: fadeIn 0.2s ease-out;
         }
 
-        .history-panel {
-            width: 90%;
-            max-width: 520px;
-            max-height: 80vh;
-            background: #1e1e24;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
-            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .history-modal {
+            background: var(--bg-dark);
+            display: flex;
+            flex-direction: column;
+            animation: panelIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
             overflow: hidden;
-            animation: panelIn 0.35s ease;
+            border: 1px solid var(--border);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            z-index: 10000;
+        }
+
+        @media (max-width: 767px) {
+            .history-modal {
+                width: 100%;
+                height: 100vh;
+                border-radius: 0;
+            }
+        }
+
+        @media (min-width: 1200px) {
+            .history-modal {
+                width: 768px;
+                max-width: 90vw;
+                height: 85vh;
+                margin: auto;
+                border-radius: 16px;
+            }
         }
 
         @keyframes panelIn {
             from {
                 opacity: 0;
-                transform: translateY(20px) scale(0.97);
+                transform: translateY(20px) scale(0.98);
             }
 
             to {
@@ -198,109 +493,294 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 18px 24px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 20px 24px;
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
         }
 
         .history-header h2 {
             margin: 0;
-            font-size: 1.15rem;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
         }
 
         .history-close {
-            background: rgba(255, 255, 255, 0.08);
-            border: none;
-            color: #fff;
-            width: 32px;
-            height: 32px;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            width: 36px;
+            height: 36px;
             border-radius: 8px;
-            font-size: 1.1rem;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: background 0.2s;
-            box-shadow: none;
-            padding: 0;
-            margin: 0;
+            transition: all 0.2s;
         }
 
         .history-close:hover {
-            background: rgba(255, 73, 73, 0.25);
-            transform: none;
-            box-shadow: none;
+            background: rgba(234, 67, 53, 0.1);
+            color: var(--danger);
+            border-color: rgba(234, 67, 53, 0.3);
         }
 
         .history-body {
-            padding: 16px 24px;
+            padding: 20px 24px;
             overflow-y: auto;
-            max-height: calc(80vh - 70px);
+            flex: 1;
+            background: var(--bg-dark);
         }
 
         .history-date-group {
-            margin-bottom: 20px;
+            margin-bottom: 24px;
         }
 
         .history-date-label {
-            font-size: 0.78rem;
+            font-size: 13px;
             font-weight: 600;
-            color: #7f5af0;
+            color: var(--text-secondary);
             text-transform: uppercase;
-            letter-spacing: 0.06em;
-            margin-bottom: 10px;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 8px;
         }
 
         .history-card {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 14px;
-            padding: 14px 18px;
-            margin-bottom: 10px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
             display: flex;
-            align-items: center;
             justify-content: space-between;
-            transition: background 0.2s;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
         }
 
         .history-card:hover {
-            background: rgba(255, 255, 255, 0.08);
+            background: var(--bg-card-hover);
+            transform: translateY(-2px);
+            border-color: rgba(37, 99, 235, 0.3);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
 
         .history-card .info {
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 6px;
         }
 
         .history-card .info .time {
-            font-size: 0.92rem;
+            color: var(--text-primary);
+            font-size: 15px;
             font-weight: 600;
-            color: #fffffe;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .history-card .info .meta {
-            font-size: 0.75rem;
-            color: rgba(255, 255, 255, 0.4);
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-family: 'Fira Code', monospace;
         }
 
         .history-card .view-btn {
-            padding: 7px 14px;
-            font-size: 0.78rem;
-            background: linear-gradient(135deg, #f59e0b, #ef4444);
-            box-shadow: 0 2px 10px rgba(245, 158, 11, 0.25);
-            border-radius: 10px;
-            margin: 0;
+            padding: 8px 16px;
+            font-size: 13px;
+            font-weight: 500;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
         }
 
         .history-card .view-btn:hover {
-            box-shadow: 0 4px 16px rgba(245, 158, 11, 0.4);
+            background: var(--primary-dark);
+            transform: translateY(-1px);
         }
 
         .history-empty {
             text-align: center;
-            color: rgba(255, 255, 255, 0.35);
-            padding: 40px 0;
-            font-size: 0.9rem;
+            color: var(--text-secondary);
+            padding: 60px 20px;
+            font-size: 14px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .history-route-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+            margin-bottom: 12px;
+            transition: border-color 0.2s, background 0.2s;
+            cursor: pointer;
+        }
+
+        .history-route-card:hover {
+            border-color: var(--primary);
+            background: var(--bg-card-hover);
+        }
+
+        .history-route-card.active {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.2);
+        }
+
+        .history-route-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 10px;
+        }
+
+        .history-route-stats {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .history-stat {
+            font-size: 12px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .history-stat span {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .btn-view-route {
+            margin-top: 12px;
+            width: 100%;
+            padding: 8px;
+            background: rgba(66, 133, 244, 0.1);
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-view-route:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .route-summary-card {
+            background: var(--bg-card);
+            border: 1px solid var(--primary);
+            border-radius: var(--radius);
+            padding: 16px 20px;
+            margin-top: 16px;
+            box-shadow: 0 0 20px rgba(66, 133, 244, 0.15);
+        }
+
+        .summary-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .summary-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .btn-clear-route {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            border-radius: 6px;
+            padding: 4px 10px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-clear-route:hover {
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        @media (max-width: 600px) {
+            .summary-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .summary-stat {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .summary-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+        }
+
+        .summary-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .summary-legend {
+            display: flex;
+            gap: 20px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+
+        .legend-dot.red {
+            background: #EA4335;
+        }
+
+        .legend-dot.blue {
+            background: #4285F4;
         }
     </style>
 
@@ -310,45 +790,147 @@
 
 <body>
 
-    <!-- Nav Bar -->
     <nav class="navbar">
-        <div class="brand">
-            <div class="icon">📍</div>
-            Live Route Tracker
+        <div class="navbar-brand">
+            <div class="navbar-logo">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="3 11 22 2 13 21 11 13 3 11" />
+                </svg>
+            </div>
+            Tracker Dashboard
         </div>
-        <div class="user-area">
-            <span class="user-badge">👤 {{ user.username }}</span>
-            <a href="{% url 'logout' %}" class="logout-btn"
-                style="text-decoration:none;display:inline-block;">Logout</a>
+        <div class="navbar-right">
+            <span class="user-badge">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                </svg>
+                {{ user.username }}
+            </span>
+            <a href="{% url 'logout' %}" class="btn-logout">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" x2="9" y1="12" y2="12" />
+                </svg>
+                Logout
+            </a>
         </div>
     </nav>
 
-    <div class="content">
+    <div class="main-container">
 
-        <h1>GPS Route Tracker</h1>
+        <h1 class="page-title">GPS Route Tracker</h1>
 
-        <button id="startBtn">Start Tracking</button>
-        <button id="stopBtn" disabled>Stop Tracking</button>
-
-        <div id="map"></div>
-
-        <button onclick="viewOffline()">View Offline Routes</button>
-        <button onclick="viewHistory()">Route History</button>
-
-        <div id="offlineData" style="font-size:12px; white-space:pre-wrap; margin-top:10px;">
+        <!-- Stats Bar -->
+        <div class="stats-bar">
+            <div class="stat-card">
+                <span class="stat-label">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12 16 14" />
+                    </svg>
+                    Status
+                </span>
+                <span class="stat-value" id="tracking-status">
+                    <span class="status-dot idle"></span> Idle
+                </span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z" />
+                        <circle cx="12" cy="10" r="3" />
+                    </svg>
+                    Distance
+                </span>
+                <span class="stat-value" id="distance-display">0.00 km</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <ellipse cx="12" cy="5" rx="9" ry="3" />
+                        <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
+                        <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+                    </svg>
+                    Points Captured
+                </span>
+                <span class="stat-value" id="points-count">0</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                        <line x1="16" y1="2" x2="16" y2="6" />
+                        <line x1="8" y1="2" x2="8" y2="6" />
+                        <line x1="3" y1="10" x2="21" y2="10" />
+                    </svg>
+                    Duration
+                </span>
+                <span class="stat-value" id="trip-duration">00:00</span>
+            </div>
         </div>
 
-        <h2>Turn-by-Turn Instructions</h2>
-
-        <div id="instructions"
-            style="white-space: pre-line; border:1px solid #ccc; padding:10px; height:200px; overflow-y:auto;">
+        <div class="controls">
+            <button id="startBtn" class="btn btn-start">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <polygon points="10 8 16 12 10 16 10 8" />
+                </svg>
+                Start Tracking
+            </button>
+            <button id="stopBtn" class="btn btn-stop" disabled>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="6" y="6" width="12" height="12" rx="2" ry="2" />
+                </svg>
+                Stop Tracking
+            </button>
+            <button id="viewOfflineBtn" class="btn btn-outline" onclick="viewOffline()">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path
+                        d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                </svg>
+                Offline Data
+            </button>
+            <button id="viewHistoryBtn" class="btn btn-outline" onclick="viewHistory()">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="8" y1="6" x2="21" y2="6" />
+                    <line x1="8" y1="12" x2="21" y2="12" />
+                    <line x1="8" y1="18" x2="21" y2="18" />
+                    <line x1="3" y1="6" x2="3.01" y2="6" />
+                    <line x1="3" y1="12" x2="3.01" y2="12" />
+                    <line x1="3" y1="18" x2="3.01" y2="18" />
+                </svg>
+                Route History
+            </button>
         </div>
 
-    </div><!-- end .content -->
+        <div class="map-wrapper">
+            <div id="map"></div>
+        </div>
+
+        <div class="instructions-card">
+            <div class="instructions-title">↩️ Turn-by-Turn Instructions</div>
+            <div class="instructions-body" id="instructions"></div>
+            <div id="offlineData" style="font-size:12px; white-space:pre-wrap; margin-top:10px;"></div>
+        </div>
+
+    </div><!-- end .main-container -->
 
     <!-- History Overlay -->
     <div class="history-overlay" id="historyOverlay">
-        <div class="history-panel">
+        <div class="history-modal">
             <div class="history-header">
                 <h2>📋 Route History</h2>
                 <button class="history-close" onclick="closeHistory()">✕</button>
@@ -371,6 +953,8 @@
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png')
             .addTo(map);
 
+        setTimeout(() => { map.invalidateSize(); }, 200);
+
         // ================= STATE =================
         let route = [];
         let rawBuffer = [];
@@ -386,6 +970,71 @@
         let stopMarker = null;
 
         const SNAP_CHUNK_SIZE = 3;
+
+
+        // ================= DISTANCE TRACKING =================
+        function haversineDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371000; // Earth radius in meters
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) *
+                Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        }
+
+        let totalDistanceMeters = 0;
+        let lastPoint = null;
+        let trackingStartTime = null;
+        let durationInterval = null;
+
+        function updateDistanceDisplay() {
+            const el = document.getElementById('distance-display');
+            if (totalDistanceMeters < 1000) {
+                el.textContent = Math.round(totalDistanceMeters) + ' m';
+            } else {
+                el.textContent = (totalDistanceMeters / 1000).toFixed(2) + ' km';
+            }
+        }
+
+        function updatePointsCount(count) {
+            document.getElementById('points-count').textContent = count;
+        }
+
+        function setTrackingStatus(active) {
+            const el = document.getElementById('tracking-status');
+            if (active) {
+                el.innerHTML = '<span class="status-dot live"></span> Live';
+            } else {
+                el.innerHTML = '<span class="status-dot idle"></span> Idle';
+            }
+        }
+
+        function startDurationTimer() {
+            trackingStartTime = Date.now();
+            durationInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - trackingStartTime) / 1000);
+                const mins = String(Math.floor(elapsed / 60)).padStart(2, '0');
+                const secs = String(elapsed % 60).padStart(2, '0');
+                document.getElementById('trip-duration').textContent =
+                    mins + ':' + secs;
+            }, 1000);
+        }
+
+        function stopDurationTimer() {
+            clearInterval(durationInterval);
+        }
+
+        function resetStats() {
+            totalDistanceMeters = 0;
+            lastPoint = null;
+            updateDistanceDisplay();
+            updatePointsCount(0);
+            setTrackingStatus(false);
+            stopDurationTimer();
+            document.getElementById('trip-duration').textContent = '00:00';
+        }
 
 
         // ================= SAFE INDEXED DB =================
@@ -457,27 +1106,19 @@
 
         // ================= COOKIE =================
         function getCookie(name) {
-
-            let cookieValue = null;
-
-            if (document.cookie && document.cookie !== '') {
-
-                const cookies = document.cookie.split(';');
-
-                for (let cookie of cookies) {
-
-                    cookie = cookie.trim();
-
-                    if (cookie.startsWith(name + '=')) {
-                        cookieValue = decodeURIComponent(
-                            cookie.substring(name.length + 1)
-                        );
-                        break;
-                    }
-                }
+            if (name === 'csrftoken') {
+                return document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
             }
+            return null;
+        }
 
-            return cookieValue;
+        // ================= AUTH HANDLER =================
+        function handleResponseAuth(res) {
+            if (res.status === 401) {
+                window.location.href = '/login/';
+                throw new Error("Unauthorized - Redirecting to login...");
+            }
+            return res;
         }
 
 
@@ -500,6 +1141,7 @@
                 });
 
                 clearTimeout(timeout);
+                handleResponseAuth(response);
 
                 if (!response.ok)
                     throw new Error("Network response failed");
@@ -548,8 +1190,16 @@
             if (finalPolyline)
                 map.removeLayer(finalPolyline);
 
-            if (route.length > 1)
-                finalPolyline = L.polyline(route, { color: 'blue', weight: 6, opacity: 0.8 }).addTo(map);
+            if (route.length > 1) {
+                finalPolyline = L.polyline(route, {
+                    color: '#4285F4',
+                    weight: 5,
+                    opacity: 0.9,
+                    lineJoin: 'round',
+                    lineCap: 'round',
+                    smoothFactor: 2.0
+                }).addTo(map);
+            }
         }
 
         function redrawLive() {
@@ -559,8 +1209,16 @@
 
             const combined = route.concat(rawBuffer);
 
-            if (combined.length > 1)
-                livePolyline = L.polyline(combined, { color: 'blue', weight: 6, opacity: 0.8, dashArray: '5, 10' }).addTo(map);
+            if (combined.length > 1) {
+                livePolyline = L.polyline(combined, {
+                    color: '#4285F4',
+                    weight: 5,
+                    opacity: 0.9,
+                    lineJoin: 'round',
+                    lineCap: 'round',
+                    smoothFactor: 2.0
+                }).addTo(map);
+            }
         }
 
 
@@ -693,6 +1351,10 @@
             lockedRoadBearing = null;
             lastAcceptedPoint = null;
 
+            resetStats();
+            setTrackingStatus(true);
+            startDurationTimer();
+
             if (startMarker) map.removeLayer(startMarker);
             if (stopMarker) map.removeLayer(stopMarker);
             if (finalPolyline) map.removeLayer(finalPolyline);
@@ -701,6 +1363,13 @@
 
             startMarker = null;
             stopMarker = null;
+            finalPolyline = null;
+            livePolyline = null;
+            markerLive = null;
+
+            if (typeof clearHistoryRoute === "function") {
+                clearHistoryRoute();
+            }
 
             watchID = navigator.geolocation.watchPosition(
 
@@ -747,6 +1416,18 @@
                         }
 
                         rawBuffer.push(p);
+
+                        const lat = p[0];
+                        const lon = p[1];
+                        if (lastPoint) {
+                            totalDistanceMeters += haversineDistance(
+                                lastPoint[0], lastPoint[1], lat, lon
+                            );
+                            updateDistanceDisplay();
+                        }
+                        lastPoint = [lat, lon];
+                        updatePointsCount(route.length + rawBuffer.length);
+
                         lastAcceptedPoint = p;
 
                     }
@@ -813,6 +1494,8 @@
 
             await finalSave(route);
 
+            resetStats();
+
             startBtn.disabled = false;
             stopBtn.disabled = true;
         };
@@ -822,7 +1505,7 @@
         window.addEventListener("online", async function () {
             const db = await dbPromise;
             if (!db) return;
-            
+
             // Read all offline routes
             const tx = db.transaction("offlineRoutes", "readonly");
             const store = tx.objectStore("offlineRoutes");
@@ -833,12 +1516,12 @@
                 for (let entry of allRoutes) {
                     try {
                         await saveOnline(entry.route);
-                        
+
                         // Transaction is auto-closed by IndexedDB during the await.
                         // We MUST open a new transaction to delete the synced route.
                         const delTx = db.transaction("offlineRoutes", "readwrite");
                         delTx.objectStore("offlineRoutes").delete(entry.id);
-                        
+
                         console.log("Synced route id:", entry.id);
                     }
                     catch {
@@ -866,12 +1549,12 @@
                 for (let entry of allRoutes) {
                     try {
                         await saveOnline(entry.route);   // try sending to server
-                        
+
                         // Transaction is auto-closed by IndexedDB during the await.
                         // We MUST open a new transaction to delete the synced route.
                         const delTx = db.transaction("offlineRoutes", "readwrite");
                         delTx.objectStore("offlineRoutes").delete(entry.id);
-                        
+
                         console.log("Periodic sync success for route id:", entry.id);
                     } catch (err) {
                         console.log("Periodic sync failed for route id:", entry.id);
@@ -912,6 +1595,7 @@
                 });
 
                 clearTimeout(timeout);
+                handleResponseAuth(res);
 
                 if (!res.ok) throw new Error("snap failed");
 
@@ -981,26 +1665,69 @@
 
         // ================= ROUTE HISTORY =================
         let historyPolyline = null;
+        let historyStartMarker = null;
+        let historyEndMarker = null;
         let historyData = [];       // cache fetched data
+        let historyMeta = { current_page: 1, total_pages: 1 };
+
+        function formatDistance(meters) {
+            if (meters < 1000) {
+                return Math.round(meters) + ' m';
+            } else {
+                return (meters / 1000).toFixed(2) + ' km';
+            }
+        }
+
+        function formatDuration(seconds) {
+            if (seconds < 60) {
+                return Math.round(seconds) + ' sec';
+            } else if (seconds < 3600) {
+                const mins = Math.floor(seconds / 60);
+                const secs = Math.round(seconds % 60);
+                return mins + ' min ' + secs + ' sec';
+            } else {
+                const hrs = Math.floor(seconds / 3600);
+                const mins = Math.floor((seconds % 3600) / 60);
+                return hrs + ' hr ' + mins + ' min';
+            }
+        }
+
+        function clearHistoryRoute() {
+            if (historyPolyline) { map.removeLayer(historyPolyline); historyPolyline = null; }
+            if (historyStartMarker) { map.removeLayer(historyStartMarker); historyStartMarker = null; }
+            if (historyEndMarker) { map.removeLayer(historyEndMarker); historyEndMarker = null; }
+            const card = document.getElementById('route-summary');
+            if (card) card.remove();
+        }
 
         function closeHistory() {
             document.getElementById('historyOverlay').classList.remove('active');
         }
 
-        async function viewHistory() {
+        async function viewHistory(page = 1) {
 
             const overlay = document.getElementById('historyOverlay');
             const body = document.getElementById('historyBody');
 
             overlay.classList.add('active');
-            body.innerHTML = '<div class="history-empty">Loading…</div>';
+
+            if (page === 1) {
+                body.innerHTML = '<div class="history-empty">Loading…</div>';
+                historyData = [];
+            } else {
+                const btn = document.getElementById('loadMoreBtn');
+                if (btn) btn.innerHTML = 'Loading...';
+            }
 
             try {
-                const res = await fetch('/route_history/');
+                const res = await fetch(`/route_history/?page=${page}&limit=10`);
+                handleResponseAuth(res);
+
                 if (!res.ok) throw new Error('fetch failed');
 
                 const data = await res.json();
-                historyData = data.routes || [];
+                historyData = page === 1 ? (data.routes || []) : historyData.concat(data.routes || []);
+                historyMeta = data.metadata || { current_page: 1, total_pages: 1 };
 
                 if (historyData.length === 0) {
                     body.innerHTML = '<div class="history-empty">No routes recorded yet.</div>';
@@ -1020,21 +1747,30 @@
                     html += '<div class="history-date-label">📅 ' + date + '</div>';
 
                     for (const r of routes) {
-                        html += '<div class="history-card">';
-                        html += '  <div class="info">';
-                        html += '    <span class="time">🕐 ' + r.time + '</span>';
-                        html += '    <span class="meta">' + r.total_points + ' GPS points</span>';
+                        html += '<div class="history-route-card" onclick="showRouteOnMap(' + r._idx + ')">';
+                        html += '  <div class="history-route-title">📍 Route — ' + date + ', ' + r.time + '</div>';
+                        html += '  <div class="history-route-stats">';
+                        html += '    <div class="history-stat">📏 Distance: <span>' + formatDistance(r.distance_meters) + '</span></div>';
+                        html += '    <div class="history-stat">⏱ Duration: <span>' + formatDuration(r.duration_seconds) + '</span></div>';
+                        html += '    <div class="history-stat">📌 Points: <span>' + r.total_points + '</span></div>';
                         html += '  </div>';
-                        html += '  <button class="view-btn" onclick="showRouteOnMap(' + r._idx + ')">View on Map</button>';
+                        html += '  <button class="btn-view-route">View on Map</button>';
                         html += '</div>';
                     }
 
                     html += '</div>';
                 }
 
+                if (historyMeta.current_page < historyMeta.total_pages) {
+                    html += `<div style="text-align: center; margin-top: 15px; margin-bottom: 10px;">
+                                <button id="loadMoreBtn" onclick="viewHistory(${historyMeta.current_page + 1})" style="padding: 8px 16px; font-size: 0.85rem; background: rgba(127, 90, 240, 0.2); border: 1px solid rgba(127, 90, 240, 0.4); border-radius: 8px; color: #fffffe; cursor: pointer;">Load More</button>
+                             </div>`;
+                }
+
                 body.innerHTML = html;
 
             } catch (err) {
+                if (err.message && err.message.includes("Unauthorized")) return;
                 body.innerHTML = '<div class="history-empty">Failed to load history.</div>';
                 console.error(err);
             }
@@ -1045,27 +1781,85 @@
             const r = historyData[idx];
             if (!r || !r.route_points) return;
 
-            // Remove previous history polyline
-            if (historyPolyline) {
-                map.removeLayer(historyPolyline);
-                historyPolyline = null;
-            }
+            clearHistoryRoute();
 
-            // Draw in orange to distinguish from live route
-            historyPolyline = L.polyline(r.route_points, {
-                color: '#f59e0b',
+            const coords = r.route_points;
+            if (coords.length === 0) return;
+
+            historyPolyline = L.polyline(coords, {
+                color: '#4285F4',
                 weight: 5,
-                opacity: 0.85
+                opacity: 0.9,
+                lineJoin: 'round',
+                lineCap: 'round',
+                smoothFactor: 2.0
             }).addTo(map);
 
-            map.fitBounds(historyPolyline.getBounds(), { padding: [40, 40] });
+            historyStartMarker = L.circleMarker(coords[0], {
+                radius: 10,
+                fillColor: '#EA4335',
+                color: '#ffffff',
+                weight: 3,
+                opacity: 1,
+                fillOpacity: 1
+            }).addTo(map).bindPopup('<b>Start Point</b><br>' + coords[0][0].toFixed(5) + ', ' + coords[0][1].toFixed(5));
 
-            // Close the panel
+            const lastCoord = coords[coords.length - 1];
+            historyEndMarker = L.circleMarker(lastCoord, {
+                radius: 10,
+                fillColor: '#4285F4',
+                color: '#ffffff',
+                weight: 3,
+                opacity: 1,
+                fillOpacity: 1
+            }).addTo(map).bindPopup('<b>End Point</b><br>' + lastCoord[0].toFixed(5) + ', ' + lastCoord[1].toFixed(5));
+
+            map.fitBounds(historyPolyline.getBounds(), { padding: [40, 40] });
+            setTimeout(() => { map.invalidateSize(); }, 200);
+
+            showRouteSummaryCard(r);
             closeHistory();
         }
 
-    </script>
+        function showRouteSummaryCard(r) {
+            let existing = document.getElementById('route-summary');
+            if (existing) existing.remove();
 
+            const html = `
+              <div class="route-summary-card" id="route-summary">
+                <div class="summary-header">
+                  <span class="summary-title">📍 Viewing Saved Route</span>
+                  <button onclick="clearHistoryRoute()" class="btn-clear-route">✕ Clear</button>
+                </div>
+                <div class="summary-stats">
+                  <div class="summary-stat">
+                    <span class="summary-label">Distance</span>
+                    <span class="summary-value" id="summary-distance">${formatDistance(r.distance_meters)}</span>
+                  </div>
+                  <div class="summary-stat">
+                    <span class="summary-label">Duration</span>
+                    <span class="summary-value" id="summary-duration">${formatDuration(r.duration_seconds)}</span>
+                  </div>
+                  <div class="summary-stat">
+                    <span class="summary-label">Points Logged</span>
+                    <span class="summary-value" id="summary-points">${r.total_points}</span>
+                  </div>
+                  <div class="summary-stat">
+                    <span class="summary-label">Saved On</span>
+                    <span class="summary-value" id="summary-date">${r.date}</span>
+                  </div>
+                </div>
+                <div class="summary-legend">
+                  <span class="legend-item"><span class="legend-dot red"></span> Start Point</span>
+                  <span class="legend-item"><span class="legend-dot blue"></span> End Point</span>
+                </div>
+              </div>
+            `;
+
+            document.querySelector('.map-wrapper').insertAdjacentHTML('afterend', html);
+        }
+
+    </script>
 </body>
 
 </html>

@@ -6,105 +6,77 @@
     <title>Register — Live Route Tracker</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Fira+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary: #4285F4;
+            --primary-dark: #2b6fd4;
+            --danger: #EA4335;
+            --bg-dark: #0f1117;
+            --bg-card: #1a1d27;
+            --border: rgba(255,255,255,0.08);
+            --text-primary: #ffffff;
+            --text-secondary: #9aa0b4;
+            --radius: 12px;
+        }
+
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Fira Sans', sans-serif;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
-            background-size: 400% 400%;
-            animation: gradientShift 12s ease infinite;
-            overflow: hidden;
-        }
-
-        @keyframes gradientShift {
-            0%   { background-position: 0% 50%; }
-            50%  { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        body::before, body::after {
-            content: '';
-            position: fixed;
-            border-radius: 50%;
-            filter: blur(80px);
-            opacity: 0.35;
-            z-index: 0;
-            pointer-events: none;
-        }
-        body::before {
-            width: 420px; height: 420px;
-            background: radial-gradient(circle, #2cb67d, transparent 70%);
-            top: -80px; right: -100px;
-            animation: floatOrb1 9s ease-in-out infinite alternate;
-        }
-        body::after {
-            width: 350px; height: 350px;
-            background: radial-gradient(circle, #7f5af0, transparent 70%);
-            bottom: -60px; left: -80px;
-            animation: floatOrb2 11s ease-in-out infinite alternate;
-        }
-        @keyframes floatOrb1 {
-            0%   { transform: translate(0, 0) scale(1); }
-            100% { transform: translate(-60px, 80px) scale(1.15); }
-        }
-        @keyframes floatOrb2 {
-            0%   { transform: translate(0, 0) scale(1); }
-            100% { transform: translate(50px, -70px) scale(1.1); }
+            background: var(--bg-dark);
+            color: var(--text-primary);
         }
 
         .auth-card {
-            position: relative;
-            z-index: 1;
             width: 100%;
             max-width: 440px;
             padding: 44px 40px;
-            background: rgba(255, 255, 255, 0.06);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 24px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-            animation: cardIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+            animation: cardIn 0.4s ease-out;
         }
+
         @keyframes cardIn {
-            0% { opacity: 0; transform: translateY(30px) scale(0.96); }
-            100% { opacity: 1; transform: translateY(0) scale(1); }
+            0% { opacity: 0; transform: translateY(10px); }
+            100% { opacity: 1; transform: translateY(0); }
         }
 
         .auth-card .logo {
             text-align: center;
-            margin-bottom: 8px;
+            margin-bottom: 12px;
         }
+        
         .auth-card .logo .icon {
             width: 56px; height: 56px;
-            background: linear-gradient(135deg, #2cb67d, #7f5af0);
-            border-radius: 16px;
+            background: rgba(66, 133, 244, 0.1);
+            border: 1px solid var(--primary);
+            border-radius: var(--radius);
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            font-size: 28px;
-            color: #fff;
-            margin-bottom: 12px;
-            box-shadow: 0 4px 20px rgba(44, 182, 125, 0.3);
+            color: var(--primary);
+            margin-bottom: 16px;
         }
 
         .auth-card h1 {
             text-align: center;
-            color: #fffffe;
+            color: var(--text-primary);
             font-size: 1.6rem;
             font-weight: 700;
-            margin-bottom: 4px;
+            margin-bottom: 6px;
         }
+        
         .auth-card .subtitle {
             text-align: center;
-            color: rgba(255, 255, 255, 0.5);
-            font-size: 0.88rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
             margin-bottom: 28px;
         }
 
@@ -112,43 +84,48 @@
             position: relative;
             margin-bottom: 22px;
         }
+        
         .input-group input {
             width: 100%;
             padding: 16px 16px 8px;
             font-size: 0.95rem;
-            font-family: 'Inter', sans-serif;
-            color: #fffffe;
-            background: rgba(255, 255, 255, 0.07);
-            border: 1.5px solid rgba(255, 255, 255, 0.12);
-            border-radius: 14px;
+            font-family: 'Fira Sans', sans-serif;
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: 8px;
             outline: none;
-            transition: border-color 0.3s, box-shadow 0.3s, background 0.3s;
+            transition: all 0.2s;
         }
+        
         .input-group input:focus {
-            border-color: #2cb67d;
-            box-shadow: 0 0 0 3px rgba(44, 182, 125, 0.2);
-            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--primary);
+            background: rgba(66, 133, 244, 0.05);
+            box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.15);
         }
+        
         .input-group input.input-error {
-            border-color: #ff6b6b;
-            box-shadow: 0 0 0 3px rgba(255, 73, 73, 0.15);
+            border-color: var(--danger);
+            box-shadow: 0 0 0 3px rgba(234, 67, 53, 0.15);
         }
+        
         .input-group label {
             position: absolute;
             left: 16px; top: 50%;
             transform: translateY(-50%);
-            color: rgba(255, 255, 255, 0.4);
+            color: var(--text-secondary);
             font-size: 0.92rem;
             pointer-events: none;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.2s ease;
         }
+        
         .input-group input:focus ~ label,
         .input-group input:not(:placeholder-shown) ~ label {
             top: 10px;
             transform: translateY(0);
-            font-size: 0.7rem;
-            color: #2cb67d;
-            letter-spacing: 0.04em;
+            font-size: 0.72rem;
+            color: var(--primary);
+            letter-spacing: 0.02em;
         }
 
         /* Password strength bar */
@@ -179,73 +156,64 @@
             margin-top: 6px;
             min-height: 16px;
         }
-        .match-hint.match { color: #2cb67d; }
-        .match-hint.no-match { color: #ff6b6b; }
+        .match-hint.match { color: var(--primary); }
+        .match-hint.no-match { color: var(--danger); }
 
         .btn-primary {
             width: 100%;
-            padding: 15px;
+            padding: 14px;
             font-size: 1rem;
-            font-family: 'Inter', sans-serif;
+            font-family: 'Fira Sans', sans-serif;
             font-weight: 600;
             color: #fff;
-            background: linear-gradient(135deg, #2cb67d, #7f5af0);
+            background: var(--primary);
             border: none;
-            border-radius: 14px;
+            border-radius: 8px;
             cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.3s;
-            box-shadow: 0 4px 20px rgba(44, 182, 125, 0.3);
-            position: relative;
-            overflow: hidden;
-            margin-top: 4px;
+            transition: all 0.2s;
+            margin-top: 8px;
         }
+        
         .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 30px rgba(44, 182, 125, 0.45);
+            background: var(--primary-dark);
+            transform: translateY(-1px);
         }
-        .btn-primary:active {
-            transform: translateY(0) scale(0.98);
-        }
-        .btn-primary::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-        .btn-primary:hover::after { opacity: 1; }
 
         .error-msg {
-            background: rgba(255, 73, 73, 0.12);
-            border: 1px solid rgba(255, 73, 73, 0.3);
-            color: #ff6b6b;
+            background: rgba(234, 67, 53, 0.1);
+            border: 1px solid rgba(234, 67, 53, 0.3);
+            color: var(--danger);
             padding: 12px 16px;
-            border-radius: 12px;
+            border-radius: 8px;
             font-size: 0.85rem;
-            margin-bottom: 18px;
+            margin-bottom: 20px;
             animation: fadeShake 0.4s ease;
         }
+
         @keyframes fadeShake {
-            0%   { opacity: 0; transform: translateX(-8px); }
-            30%  { transform: translateX(6px); }
-            60%  { transform: translateX(-4px); }
+            0%   { opacity: 0; transform: translateX(-4px); }
+            30%  { transform: translateX(3px); }
+            60%  { transform: translateX(-2px); }
             100% { opacity: 1; transform: translateX(0); }
         }
 
         .footer-link {
             text-align: center;
-            margin-top: 24px;
-            color: rgba(255, 255, 255, 0.45);
+            margin-top: 28px;
+            color: var(--text-secondary);
             font-size: 0.85rem;
         }
+        
         .footer-link a {
-            color: #2cb67d;
+            color: var(--primary);
             text-decoration: none;
             font-weight: 600;
             transition: color 0.2s;
         }
-        .footer-link a:hover { color: #7f5af0; }
+        
+        .footer-link a:hover {
+            color: var(--primary-dark);
+        }
 
         @media (max-width: 480px) {
             .auth-card { margin: 16px; padding: 36px 24px; }
@@ -256,10 +224,14 @@
 
     <div class="auth-card">
         <div class="logo">
-            <div class="icon">🚀</div>
+            <div class="icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="3 11 22 2 13 21 11 13 3 11" />
+                </svg>
+            </div>
         </div>
         <h1>Create Account</h1>
-        <p class="subtitle">Join Live Route Tracker today</p>
+        <p class="subtitle">Join Tracker Dashboard</p>
 
         {% if error %}
             <div class="error-msg">{{ error }}</div>
@@ -320,12 +292,12 @@
             if(/[^A-Za-z0-9]/.test(v)) score++;
 
             const levels = [
-                { w:'0%',  c:'transparent',label:'', color:'rgba(255,255,255,0.4)' },
-                { w:'20%', c:'#ff6b6b',    label:'Very weak', color:'#ff6b6b' },
+                { w:'0%',  c:'transparent',label:'', color:'var(--text-secondary)' },
+                { w:'20%', c:'var(--danger)',    label:'Very weak', color:'var(--danger)' },
                 { w:'40%', c:'#ff9f43',    label:'Weak',      color:'#ff9f43' },
                 { w:'60%', c:'#feca57',    label:'Fair',      color:'#feca57' },
-                { w:'80%', c:'#48dbfb',    label:'Strong',    color:'#48dbfb' },
-                { w:'100%',c:'#2cb67d',    label:'Very strong',color:'#2cb67d' }
+                { w:'80%', c:'var(--primary)',    label:'Strong',    color:'var(--primary)' },
+                { w:'100%',c:'var(--primary-dark)',    label:'Very strong',color:'var(--primary-dark)' }
             ];
             const l = levels[score];
             fill.style.width      = l.w;
