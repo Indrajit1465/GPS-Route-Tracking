@@ -24,18 +24,26 @@ from decouple import config
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config('SECRET_KEY')
 
+GOOGLE_MAPS_API_KEY = config('GOOGLE_MAPS_API_KEY')
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
 
 CSRF_TRUSTED_ORIGINS = [
-    "https://*.ngrok-free.app",
-    "https://*.ngrok-free.dev",
-    "https://*.ngrok.io",
-    "http://localhost:8000",
-    "http://127.0.0.1:8000",
+'http://localhost:8000',
+      'http://127.0.0.1:8000',
+      'https://*.ngrok-free.app',
+      'https://*.ngrok-free.dev',
+      'https://*.ngrok.io',
+      'https://*.ngrok-free.dev',
+      # Add your exact current ngrok URL as well
+      # for guaranteed matching:
+      'https://subrectangular-unsoberly-carmella.ngrok-free.dev',
 ]
+
+CSRF_COOKIE_HTTPONLY = False
 
 # Application definition
 
@@ -48,6 +56,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'tracker',
     'users',
+    'admin_panel',
+    'django_ratelimit',
 ]
 
 MIDDLEWARE = [
@@ -86,13 +96,22 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config('DB_NAME', default='route_tracker_db'),
-        'USER': config('DB_USER', default='postgres'),
-        'PASSWORD': config('DB_PASSWORD', default='root'),
+        'NAME': config('DB_NAME'),
+        'USER': config('DB_USER'),
+        'PASSWORD': config('DB_PASSWORD'),
         'HOST': 'localhost',
         'PORT': '5432',
     }
 }
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+    }
+}
+
+SILENCED_SYSTEM_CHECKS = ['django_ratelimit.E003', 'django_ratelimit.W001']
 
 
 # Password validation
@@ -130,6 +149,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATICFILES_DIRS = [BASE_DIR / 'static']
 
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'

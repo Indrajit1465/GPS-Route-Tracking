@@ -259,7 +259,7 @@
         <div class="error-msg">{{ error }}</div>
         {% endif %}
 
-        <form method="POST" autocomplete="off">
+        <form method="POST" action="{% url 'login' %}" autocomplete="off">
             {% csrf_token %}
 
             <div class="input-group">

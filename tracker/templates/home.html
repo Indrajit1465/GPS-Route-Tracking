@@ -1,35 +1,34 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Live Route Tracker (Offline Ready)</title>
-
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Fira+Sans:wght@400;600;700&display=swap"
         rel="stylesheet">
 
     <style>
         :root {
-            --primary: #2563EB;
-            --primary-dark: #1E40AF;
+            --primary: #4285F4;
+            --primary-dark: #2b6fd4;
             --danger: #EA4335;
             --danger-dark: #c62828;
-            --accent: #F97316;
-            --bg-dark: #0f1117;
-            --bg-card: #1E293B;
-            --bg-card-hover: #334155;
-            --border: rgba(255, 255, 255, 0.12);
-            --text-primary: #F8FAFC;
-            --text-secondary: #94A3B8;
             --success: #34A853;
-            --radius: 8px;
-            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --warning: #FBBC05;
+            --bg-dark: #0f1117;
+            --bg-card: #1a1d27;
+            --bg-card-hover: #21253a;
+            --border: rgba(255, 255, 255, 0.08);
+            --text-primary: #ffffff;
+            --text-secondary: #9aa0b4;
+            --radius: 12px;
+            --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+            --font-data: 'Fira Code', 'Courier New', monospace;
+            --font-body: 'Fira Sans', 'Segoe UI', Arial, sans-serif;
         }
 
         * {
@@ -41,16 +40,16 @@
         body {
             background: var(--bg-dark);
             color: var(--text-primary);
-            font-family: 'Fira Sans';
+            font-family: var(--font-body);
             min-height: 100vh;
         }
 
-        /* -------- Nav Bar -------- */
+        /* ── Navbar ── */
         .navbar {
             background: rgba(15, 17, 23, 0.95);
             backdrop-filter: blur(12px);
             border-bottom: 1px solid var(--border);
-            padding: 16px 24px;
+            padding: 12px 24px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -62,109 +61,48 @@
         .navbar-brand {
             display: flex;
             align-items: center;
-            gap: 12px;
-            font-size: 20px;
-            font-weight: 600;
+            gap: 10px;
+            font-size: 18px;
+            font-weight: 700;
             color: var(--text-primary);
-        }
-
-        .navbar-logo {
-            width: 36px;
-            height: 36px;
-            border-radius: var(--radius);
-            background: var(--primary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            box-shadow: 0 0 15px rgba(37, 99, 235, 0.3);
+            font-family: var(--font-body);
         }
 
         .navbar-right {
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 12px;
         }
 
         .user-badge {
-            background: rgba(255, 255, 255, 0.05);
+            background: var(--bg-card);
             border: 1px solid var(--border);
-            border-radius: 6px;
-            padding: 8px 16px;
-            font-size: 14px;
-            font-family: 'Fira Code', monospace;
+            border-radius: 20px;
+            padding: 6px 14px;
+            font-size: 13px;
             color: var(--text-secondary);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .btn-logout {
-            background: rgba(234, 67, 53, 0.1);
-            border: 1px solid rgba(234, 67, 53, 0.3);
-            color: #fca5a5;
-            border-radius: 6px;
-            padding: 8px 16px;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-decoration: none;
             display: flex;
             align-items: center;
             gap: 6px;
         }
 
+        .btn-logout {
+            background: transparent;
+            border: 1px solid var(--danger);
+            color: var(--danger);
+            border-radius: 8px;
+            padding: 6px 16px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
         .btn-logout:hover {
             background: var(--danger);
             color: white;
-            border-color: var(--danger);
         }
 
-        @media (max-width: 768px) {
-            .navbar {
-                padding: 12px 16px;
-            }
-
-            .navbar-brand {
-                font-size: 16px;
-                gap: 8px;
-            }
-
-            .navbar-logo {
-                width: 28px;
-                height: 28px;
-            }
-
-            .navbar-logo svg {
-                width: 16px;
-                height: 16px;
-            }
-
-            .user-badge {
-                padding: 6px 10px;
-                font-size: 12px;
-                gap: 4px;
-            }
-
-            .user-badge svg {
-                width: 12px;
-                height: 12px;
-            }
-
-            .btn-logout {
-                padding: 6px 10px;
-                font-size: 12px;
-                gap: 4px;
-            }
-
-            .btn-logout svg {
-                width: 12px;
-                height: 12px;
-            }
-        }
-
-        /* -------- Main Container -------- */
+        /* ── Layout ── */
         .main-container {
             max-width: 1400px;
             margin: 0 auto;
@@ -174,75 +112,49 @@
         .page-title {
             font-size: 22px;
             font-weight: 700;
-            color: var(--text-primary);
             margin-bottom: 20px;
             letter-spacing: -0.3px;
         }
 
-        /* -------- Stats Bar -------- */
+        /* ── Stats Bar ── */
         .stats-bar {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
-            margin-bottom: 24px;
+            gap: 12px;
+            margin-bottom: 16px;
         }
 
         .stat-card {
             background: var(--bg-card);
             border: 1px solid var(--border);
             border-radius: var(--radius);
-            padding: 16px 20px;
+            padding: 14px 16px;
             display: flex;
             flex-direction: column;
-            gap: 6px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-            position: relative;
-            overflow: hidden;
-        }
-
-        /* Subtle accent line inside cards */
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: rgba(255, 255, 255, 0.05);
+            gap: 4px;
         }
 
         .stat-label {
-            font-size: 12px;
+            font-size: 11px;
             color: var(--text-secondary);
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .stat-label svg {
-            width: 14px;
-            height: 14px;
-            opacity: 0.7;
+            letter-spacing: 0.8px;
+            font-family: var(--font-body);
         }
 
         .stat-value {
-            font-size: 24px;
-            font-family: 'Fira Code', monospace;
-            font-weight: 600;
+            font-size: 18px;
+            font-weight: 700;
             color: var(--text-primary);
-            display: flex;
-            align-items: center;
+            font-family: var(--font-data);
         }
 
         .status-dot {
             display: inline-block;
-            width: 10px;
-            height: 10px;
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
-            margin-right: 8px;
+            margin-right: 6px;
         }
 
         .status-dot.idle {
@@ -251,121 +163,84 @@
 
         .status-dot.live {
             background: var(--success);
-            box-shadow: 0 0 12px rgba(52, 168, 83, 0.6);
-            animation: pulse 1.5s infinite;
+            box-shadow: 0 0 8px var(--success);
+            animation: pulse 1.2s infinite;
         }
 
         @media (prefers-reduced-motion: reduce) {
             .status-dot.live {
                 animation: none;
-                /* Disable pulse if user prefers reduced motion */
             }
         }
 
         @keyframes pulse {
-            0% {
-                box-shadow: 0 0 0 0 rgba(52, 168, 83, 0.7);
-            }
 
-            70% {
-                box-shadow: 0 0 0 6px rgba(52, 168, 83, 0);
-            }
-
+            0%,
             100% {
-                box-shadow: 0 0 0 0 rgba(52, 168, 83, 0);
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.4;
             }
         }
 
-        @media (max-width: 768px) {
-            .stats-bar {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 12px;
-            }
-
-            .stat-value {
-                font-size: 20px;
-            }
-        }
-
-        /* -------- Controls -------- */
+        /* ── Buttons ── */
         .controls {
             display: flex;
-            gap: 12px;
-            margin-bottom: 24px;
+            gap: 10px;
+            margin-bottom: 16px;
             flex-wrap: wrap;
         }
 
         .btn {
-            padding: 12px 24px;
+            padding: 11px 22px;
             border-radius: var(--radius);
             font-size: 14px;
-            font-weight: 500;
-            border: 1px solid transparent;
+            font-weight: 600;
+            border: none;
             cursor: pointer;
-            transition: all 0.2s ease-in-out;
+            transition: all 0.2s;
             display: flex;
             align-items: center;
-            justify-content: center;
             gap: 8px;
-        }
-
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none !important;
-            box-shadow: none !important;
-        }
-
-        .btn svg {
-            width: 18px;
-            height: 18px;
+            font-family: var(--font-body);
         }
 
         .btn-start {
             background: var(--primary);
             color: white;
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+            box-shadow: 0 4px 16px rgba(66, 133, 244, 0.35);
         }
 
-        .btn-start:not(:disabled):hover {
+        .btn-start:hover {
             background: var(--primary-dark);
             transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(66, 133, 244, 0.45);
         }
 
         .btn-stop {
             background: var(--danger);
             color: white;
-            box-shadow: 0 4px 12px rgba(234, 67, 53, 0.25);
+            box-shadow: 0 4px 16px rgba(234, 67, 53, 0.35);
         }
 
-        .btn-stop:not(:disabled):hover {
+        .btn-stop:hover {
             background: var(--danger-dark);
             transform: translateY(-1px);
         }
 
         .btn-outline {
             background: transparent;
-            color: var(--text-primary);
-            border-color: var(--border);
+            color: var(--primary);
+            border: 1.5px solid var(--primary);
         }
 
         .btn-outline:hover {
-            background: rgba(255, 255, 255, 0.05);
-            border-color: rgba(255, 255, 255, 0.2);
+            background: rgba(66, 133, 244, 0.1);
         }
 
-        @media (max-width: 767px) {
-            .controls {
-                flex-direction: column;
-                gap: 8px;
-            }
-
-            .btn {
-                width: 100%;
-            }
-        }
-
-        /* -------- Map Wrapper -------- */
+        /* ── Map ── */
         .map-wrapper {
             border-radius: 16px;
             overflow: hidden;
@@ -377,22 +252,9 @@
         #map {
             width: 100%;
             height: 65vh;
-            z-index: 1;
         }
 
-        @media (min-width: 768px) and (max-width: 1199px) {
-            #map {
-                height: 70vh;
-            }
-        }
-
-        @media (min-width: 1200px) {
-            #map {
-                height: 78vh;
-            }
-        }
-
-        /* -------- Instructions -------- */
+        /* ── Instructions Card ── */
         .instructions-card {
             background: var(--bg-card);
             border: 1px solid var(--border);
@@ -404,11 +266,7 @@
         .instructions-title {
             font-size: 15px;
             font-weight: 600;
-            color: var(--text-primary);
             margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
         }
 
         .instructions-body {
@@ -416,273 +274,9 @@
             color: var(--text-secondary);
             font-size: 13px;
             line-height: 1.6;
-            overflow-y: auto;
-            white-space: pre-line;
         }
 
-        /* -------- History Panel -------- */
-        .history-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            z-index: 9999;
-            background: rgba(15, 17, 23, 0.85);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            justify-content: center;
-            align-items: center;
-        }
-
-        .history-overlay.active {
-            display: flex;
-            animation: fadeIn 0.2s ease-out;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-            }
-
-            to {
-                opacity: 1;
-            }
-        }
-
-        .history-modal {
-            background: var(--bg-dark);
-            display: flex;
-            flex-direction: column;
-            animation: panelIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            overflow: hidden;
-            border: 1px solid var(--border);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            z-index: 10000;
-        }
-
-        @media (max-width: 767px) {
-            .history-modal {
-                width: 100%;
-                height: 100vh;
-                border-radius: 0;
-            }
-        }
-
-        @media (min-width: 1200px) {
-            .history-modal {
-                width: 768px;
-                max-width: 90vw;
-                height: 85vh;
-                margin: auto;
-                border-radius: 16px;
-            }
-        }
-
-        @keyframes panelIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px) scale(0.98);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-
-        .history-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 20px 24px;
-            background: var(--bg-card);
-            border-bottom: 1px solid var(--border);
-        }
-
-        .history-header h2 {
-            margin: 0;
-            font-size: 18px;
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        .history-close {
-            background: transparent;
-            border: 1px solid var(--border);
-            color: var(--text-secondary);
-            width: 36px;
-            height: 36px;
-            border-radius: 8px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-        }
-
-        .history-close:hover {
-            background: rgba(234, 67, 53, 0.1);
-            color: var(--danger);
-            border-color: rgba(234, 67, 53, 0.3);
-        }
-
-        .history-body {
-            padding: 20px 24px;
-            overflow-y: auto;
-            flex: 1;
-            background: var(--bg-dark);
-        }
-
-        .history-date-group {
-            margin-bottom: 24px;
-        }
-
-        .history-date-label {
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 12px;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 8px;
-        }
-
-        .history-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-            transition: all 0.2s;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .history-card:hover {
-            background: var(--bg-card-hover);
-            transform: translateY(-2px);
-            border-color: rgba(37, 99, 235, 0.3);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-
-        .history-card .info {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .history-card .info .time {
-            color: var(--text-primary);
-            font-size: 15px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .history-card .info .meta {
-            color: var(--text-secondary);
-            font-size: 13px;
-            font-family: 'Fira Code', monospace;
-        }
-
-        .history-card .view-btn {
-            padding: 8px 16px;
-            font-size: 13px;
-            font-weight: 500;
-            background: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .history-card .view-btn:hover {
-            background: var(--primary-dark);
-            transform: translateY(-1px);
-        }
-
-        .history-empty {
-            text-align: center;
-            color: var(--text-secondary);
-            padding: 60px 20px;
-            font-size: 14px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .history-route-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 16px;
-            margin-bottom: 12px;
-            transition: border-color 0.2s, background 0.2s;
-            cursor: pointer;
-        }
-
-        .history-route-card:hover {
-            border-color: var(--primary);
-            background: var(--bg-card-hover);
-        }
-
-        .history-route-card.active {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.2);
-        }
-
-        .history-route-title {
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin-bottom: 10px;
-        }
-
-        .history-route-stats {
-            display: flex;
-            gap: 16px;
-            flex-wrap: wrap;
-        }
-
-        .history-stat {
-            font-size: 12px;
-            color: var(--text-secondary);
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .history-stat span {
-            color: var(--text-primary);
-            font-weight: 600;
-        }
-
-        .btn-view-route {
-            margin-top: 12px;
-            width: 100%;
-            padding: 8px;
-            background: rgba(66, 133, 244, 0.1);
-            border: 1px solid var(--primary);
-            color: var(--primary);
-            border-radius: 8px;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .btn-view-route:hover {
-            background: var(--primary);
-            color: white;
-        }
-
+        /* ── Route Summary Card ── */
         .route-summary-card {
             background: var(--bg-card);
             border: 1px solid var(--primary);
@@ -702,7 +296,6 @@
         .summary-title {
             font-size: 14px;
             font-weight: 700;
-            color: var(--text-primary);
         }
 
         .btn-clear-route {
@@ -728,12 +321,6 @@
             margin-bottom: 14px;
         }
 
-        @media (max-width: 600px) {
-            .summary-stats {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
         .summary-stat {
             display: flex;
             flex-direction: column;
@@ -750,7 +337,7 @@
         .summary-value {
             font-size: 16px;
             font-weight: 700;
-            color: var(--text-primary);
+            font-family: var(--font-data);
         }
 
         .summary-legend {
@@ -776,465 +363,143 @@
         }
 
         .legend-dot.red {
-            background: #EA4335;
+            background: var(--danger);
         }
 
         .legend-dot.blue {
-            background: #4285F4;
+            background: var(--primary);
+        }
+
+        /* ── History Cards ── */
+        .history-route-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s;
+        }
+
+        .history-route-card:hover {
+            border-color: var(--primary);
+            background: var(--bg-card-hover);
+        }
+
+        .history-route-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .history-route-stats {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .history-stat {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .history-stat span {
+            color: var(--text-primary);
+            font-weight: 600;
+            font-family: var(--font-data);
+        }
+
+        .btn-view-route {
+            margin-top: 12px;
+            width: 100%;
+            padding: 8px;
+            background: rgba(66, 133, 244, 0.1);
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-view-route:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .load-more-btn {
+            width: 100%;
+            padding: 12px;
+            background: transparent;
+            border: 1.5px solid var(--border);
+            color: var(--text-secondary);
+            border-radius: var(--radius);
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: all 0.2s;
+        }
+
+        .load-more-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* ── Responsive Breakpoints ── */
+        @media (max-width: 767px) {
+            .controls {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .stats-bar {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .summary-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .main-container {
+                padding: 12px;
+            }
+
+            #map {
+                height: 65vh;
+            }
+        }
+
+        @media (min-width: 768px) and (max-width: 1199px) {
+            #map {
+                height: 70vh;
+            }
+        }
+
+        @media (min-width: 1200px) {
+            #map {
+                height: 78vh;
+            }
         }
     </style>
 
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/leaflet.marker.slideto@0.2.0/Leaflet.Marker.SlideTo.js"></script>
-</head>
-
-<body>
-
-    <nav class="navbar">
-        <div class="navbar-brand">
-            <div class="navbar-logo">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <polygon points="3 11 22 2 13 21 11 13 3 11" />
-                </svg>
-            </div>
-            Tracker Dashboard
-        </div>
-        <div class="navbar-right">
-            <span class="user-badge">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                    <circle cx="12" cy="7" r="4" />
-                </svg>
-                {{ user.username }}
-            </span>
-            <a href="{% url 'logout' %}" class="btn-logout">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                    <polyline points="16 17 21 12 16 7" />
-                    <line x1="21" x2="9" y1="12" y2="12" />
-                </svg>
-                Logout
-            </a>
-        </div>
-    </nav>
-
-    <div class="main-container">
-
-        <h1 class="page-title">GPS Route Tracker</h1>
-
-        <!-- Stats Bar -->
-        <div class="stats-bar">
-            <div class="stat-card">
-                <span class="stat-label">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10" />
-                        <polyline points="12 6 12 12 16 14" />
-                    </svg>
-                    Status
-                </span>
-                <span class="stat-value" id="tracking-status">
-                    <span class="status-dot idle"></span> Idle
-                </span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-label">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z" />
-                        <circle cx="12" cy="10" r="3" />
-                    </svg>
-                    Distance
-                </span>
-                <span class="stat-value" id="distance-display">0.00 km</span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-label">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <ellipse cx="12" cy="5" rx="9" ry="3" />
-                        <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
-                        <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
-                    </svg>
-                    Points Captured
-                </span>
-                <span class="stat-value" id="points-count">0</span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-label">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                        <line x1="16" y1="2" x2="16" y2="6" />
-                        <line x1="8" y1="2" x2="8" y2="6" />
-                        <line x1="3" y1="10" x2="21" y2="10" />
-                    </svg>
-                    Duration
-                </span>
-                <span class="stat-value" id="trip-duration">00:00</span>
-            </div>
-        </div>
-
-        <div class="controls">
-            <button id="startBtn" class="btn btn-start">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10" />
-                    <polygon points="10 8 16 12 10 16 10 8" />
-                </svg>
-                Start Tracking
-            </button>
-            <button id="stopBtn" class="btn btn-stop" disabled>
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="6" y="6" width="12" height="12" rx="2" ry="2" />
-                </svg>
-                Stop Tracking
-            </button>
-            <button id="viewOfflineBtn" class="btn btn-outline" onclick="viewOffline()">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path
-                        d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-                </svg>
-                Offline Data
-            </button>
-            <button id="viewHistoryBtn" class="btn btn-outline" onclick="viewHistory()">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="8" y1="6" x2="21" y2="6" />
-                    <line x1="8" y1="12" x2="21" y2="12" />
-                    <line x1="8" y1="18" x2="21" y2="18" />
-                    <line x1="3" y1="6" x2="3.01" y2="6" />
-                    <line x1="3" y1="12" x2="3.01" y2="12" />
-                    <line x1="3" y1="18" x2="3.01" y2="18" />
-                </svg>
-                Route History
-            </button>
-        </div>
-
-        <div class="map-wrapper">
-            <div id="map"></div>
-        </div>
-
-        <div class="instructions-card">
-            <div class="instructions-title">↩️ Turn-by-Turn Instructions</div>
-            <div class="instructions-body" id="instructions"></div>
-            <div id="offlineData" style="font-size:12px; white-space:pre-wrap; margin-top:10px;"></div>
-        </div>
-
-    </div><!-- end .main-container -->
-
-    <!-- History Overlay -->
-    <div class="history-overlay" id="historyOverlay">
-        <div class="history-modal">
-            <div class="history-header">
-                <h2>📋 Route History</h2>
-                <button class="history-close" onclick="closeHistory()">✕</button>
-            </div>
-            <div class="history-body" id="historyBody">
-                <div class="history-empty">Loading…</div>
-            </div>
-        </div>
-    </div>
-
     <script>
-
-        // ================= BUTTONS =================
-        const startBtn = document.getElementById("startBtn");
-        const stopBtn = document.getElementById("stopBtn");
-
-        // ================= MAP =================
-        var map = L.map('map').setView([20.5937, 78.9629], 5);
-
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png')
-            .addTo(map);
-
-        setTimeout(() => { map.invalidateSize(); }, 200);
-
-        // ================= STATE =================
-        let route = [];
-        let rawBuffer = [];
-
-        let lockedRoadBearing = null;
-        let lastAcceptedPoint = null;
-
-        let markerLive = null;
-        let livePolyline = null;
-        let finalPolyline = null;
-        let watchID = null;
-        let startMarker = null;
-        let stopMarker = null;
-
-        const SNAP_CHUNK_SIZE = 3;
-
-
-        // ================= DISTANCE TRACKING =================
-        function haversineDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371000; // Earth radius in meters
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                Math.cos(lat1 * Math.PI / 180) *
-                Math.cos(lat2 * Math.PI / 180) *
-                Math.sin(dLon / 2) * Math.sin(dLon / 2);
-            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        }
-
-        let totalDistanceMeters = 0;
-        let lastPoint = null;
-        let trackingStartTime = null;
-        let durationInterval = null;
-
-        function updateDistanceDisplay() {
-            const el = document.getElementById('distance-display');
-            if (totalDistanceMeters < 1000) {
-                el.textContent = Math.round(totalDistanceMeters) + ' m';
-            } else {
-                el.textContent = (totalDistanceMeters / 1000).toFixed(2) + ' km';
-            }
-        }
-
-        function updatePointsCount(count) {
-            document.getElementById('points-count').textContent = count;
-        }
-
-        function setTrackingStatus(active) {
-            const el = document.getElementById('tracking-status');
-            if (active) {
-                el.innerHTML = '<span class="status-dot live"></span> Live';
-            } else {
-                el.innerHTML = '<span class="status-dot idle"></span> Idle';
-            }
-        }
-
-        function startDurationTimer() {
-            trackingStartTime = Date.now();
-            durationInterval = setInterval(() => {
-                const elapsed = Math.floor((Date.now() - trackingStartTime) / 1000);
-                const mins = String(Math.floor(elapsed / 60)).padStart(2, '0');
-                const secs = String(elapsed % 60).padStart(2, '0');
-                document.getElementById('trip-duration').textContent =
-                    mins + ':' + secs;
-            }, 1000);
-        }
-
-        function stopDurationTimer() {
-            clearInterval(durationInterval);
-        }
-
-        function resetStats() {
-            totalDistanceMeters = 0;
-            lastPoint = null;
-            updateDistanceDisplay();
-            updatePointsCount(0);
-            setTrackingStatus(false);
-            stopDurationTimer();
-            document.getElementById('trip-duration').textContent = '00:00';
-        }
-
-
-        // ================= SAFE INDEXED DB =================
-        let dbPromise = new Promise((resolve, reject) => {
-
-            if (!window.indexedDB) {
-                console.warn("IndexedDB not supported");
-                resolve(null);
-                return;
-            }
-
-            const request = indexedDB.open("RouteTrackerDB", 1);
-
-            request.onupgradeneeded = function (event) {
-                const db = event.target.result;
-
-                if (!db.objectStoreNames.contains("offlineRoutes")) {
-                    db.createObjectStore("offlineRoutes", {
-                        keyPath: "id",
-                        autoIncrement: true
-                    });
-                }
-            };
-
-            request.onsuccess = function (event) {
-                resolve(event.target.result);
-            };
-
-            request.onerror = function () {
-                console.error("IndexedDB failed to open");
-                resolve(null);
-            };
-        });
-
-
-        // ================= OFFLINE SAVE =================
-        async function saveOffline(routeData) {
-
-            const db = await dbPromise;
-
-            if (!db) {
-                console.warn("No DB available.");
-                return;
-            }
-
-            return new Promise((resolve, reject) => {
-
-                const tx = db.transaction("offlineRoutes", "readwrite");
-                const store = tx.objectStore("offlineRoutes");
-
-                const request = store.add({
-                    route: routeData,
-                    timestamp: Date.now()
-                });
-
-                request.onsuccess = function () {
-                    console.log("Saved offline successfully");
-                    alert("Offline Saved!");
-                    resolve();
-                };
-
-                request.onerror = function () {
-                    console.error("Failed to save offline");
-                    reject();
-                };
-            });
-        }
-
-
-        // ================= COOKIE =================
-        function getCookie(name) {
-            if (name === 'csrftoken') {
-                return document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
-            }
-            return null;
-        }
-
-        // ================= AUTH HANDLER =================
-        function handleResponseAuth(res) {
-            if (res.status === 401) {
-                window.location.href = '/login/';
-                throw new Error("Unauthorized - Redirecting to login...");
-            }
-            return res;
-        }
-
-
-        // ================= ONLINE SAVE =================
-        async function saveOnline(routeData) {
-
-            const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 4000);
-
-            try {
-
-                const response = await fetch("/save_route/", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-CSRFToken": getCookie("csrftoken")
-                    },
-                    body: JSON.stringify({ route: routeData }),
-                    signal: controller.signal
-                });
-
-                clearTimeout(timeout);
-                handleResponseAuth(response);
-
-                if (!response.ok)
-                    throw new Error("Network response failed");
-
-                const data = await response.json();
-
-                if (data.status !== "ok")
-                    throw new Error("Backend returned error");
-
-                console.log("Saved online successfully");
-
-            } catch (err) {
-                clearTimeout(timeout);
-                throw err;
-            }
-        }
-
-
-        // ================= FINAL SAVE CONTROLLER =================
-        async function finalSave(routeData) {
-
-            console.log("Final route length:", routeData.length);
-
-            if (routeData.length < 2) {
-                console.log("Route too short. Not saving.");
-                return;
-            }
-
-            try {
-                console.log("Trying online save...");
-                await saveOnline(routeData);
-                console.log("Online save success.");
-            }
-            catch (err) {
-                console.warn("Online save failed:", err.message);
-                console.warn("Saving offline instead...");
-                await saveOffline(routeData);
-                console.log("Offline save completed.");
-            }
-        }
-
-
-        // ================= DRAW =================
-        function redrawFinal() {
-
-            if (finalPolyline)
-                map.removeLayer(finalPolyline);
-
-            if (route.length > 1) {
-                finalPolyline = L.polyline(route, {
-                    color: '#4285F4',
-                    weight: 5,
-                    opacity: 0.9,
-                    lineJoin: 'round',
-                    lineCap: 'round',
-                    smoothFactor: 2.0
-                }).addTo(map);
-            }
-        }
-
-        function redrawLive() {
-
-            if (livePolyline)
-                map.removeLayer(livePolyline);
-
-            const combined = route.concat(rawBuffer);
-
-            if (combined.length > 1) {
-                livePolyline = L.polyline(combined, {
-                    color: '#4285F4',
-                    weight: 5,
-                    opacity: 0.9,
-                    lineJoin: 'round',
-                    lineCap: 'round',
-                    smoothFactor: 2.0
-                }).addTo(map);
-            }
-        }
-
-
-        // ================= MOTION FILTER =================
+        // ═══════════════════════════════════════════
+        // MOTION FILTER — Kalman-style GPS smoother
+        // Adapts trust level based on GPS accuracy
+        // ═══════════════════════════════════════════
         class MotionFilter {
-
             constructor() {
                 this.lat = null;
                 this.lon = null;
-
                 this.vLat = 0;
                 this.vLon = 0;
-
                 this.posGain = 0.45;
                 this.velGain = 0.15;
-
                 this.damping = 0.80;
             }
 
@@ -1246,620 +511,1043 @@
             }
 
             update(lat, lon, acc) {
-
+                // First point — initialize directly
                 if (this.lat === null) {
                     this.lat = lat;
                     this.lon = lon;
                     return [lat, lon];
                 }
 
-                if (acc < 6) this.posGain = 0.6;
-                else if (acc < 12) this.posGain = 0.4;
-                else this.posGain = 0.15; // Strongly distrust bad GPS
+                // Adapt trust level based on GPS accuracy
+                // Low accuracy number = high quality GPS signal
+                if (acc < 6) this.posGain = 0.6;   // Excellent GPS
+                else if (acc < 12) this.posGain = 0.4;   // Good GPS
+                else this.posGain = 0.15;  // Poor GPS — distrust
 
-                // prediction
+                // Prediction step
                 let pLat = this.lat + this.vLat;
                 let pLon = this.lon + this.vLon;
 
-                // residual
+                // Residual (difference from prediction)
                 let rLat = lat - pLat;
                 let rLon = lon - pLon;
 
-                // correction
-                this.lat = pLat + this.posGain * rLat;
-                this.lon = pLon + this.posGain * rLon;
+                // Correction step
+                this.lat += this.posGain * rLat;
+                this.lon += this.posGain * rLon;
 
+                // Velocity update
                 this.vLat += this.velGain * rLat;
                 this.vLon += this.velGain * rLon;
 
-                // velocity damping
+                // Velocity damping — prevents runaway drift
                 this.vLat *= this.damping;
                 this.vLon *= this.damping;
 
                 return [this.lat, this.lon];
             }
         }
-        const filter = new MotionFilter();
 
-        // ================= BEARING =================
-        function bearing(a, b) {
-
-            const lat1 = a[0] * Math.PI / 180;
-            const lat2 = b[0] * Math.PI / 180;
-            const dLon = (b[1] - a[1]) * Math.PI / 180;
-
-            const y = Math.sin(dLon) * Math.cos(lat2);
-            const x = Math.cos(lat1) * Math.sin(lat2) -
-                Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
-
-            return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
-        }
-
-        // ================= DISTANCE FILTER =================
-        function distance(a, b) {
-
-            const R = 6371000;
-
-            const dLat = (b[0] - a[0]) * Math.PI / 180;
-            const dLon = (b[1] - a[1]) * Math.PI / 180;
-
-            const lat1 = a[0] * Math.PI / 180;
-            const lat2 = b[0] * Math.PI / 180;
-
-            const x =
-                Math.sin(dLat / 2) ** 2 +
-                Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
-
-            return 2 * R * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
-        }
-
-        // ================= heading func =================
-        function headingStable(prev, curr) {
-
-            if (!prev) return true;
-
-            const newBearing = bearing(prev, curr);
-
-            if (lockedRoadBearing === null) {
-                lockedRoadBearing = newBearing;
-                return true;
-            }
-
-            let diff = Math.abs(newBearing - lockedRoadBearing);
-
-            if (diff > 180) diff = 360 - diff;
-
-            if (diff < 110) {
-
-                lockedRoadBearing =
-                    0.8 * lockedRoadBearing + 0.2 * newBearing;
-
-                return true;
-            }
-
-            lockedRoadBearing = newBearing;
-            return true;
-        }
-
-        // ================= START =================
-        startBtn.onclick = function () {
-
-            route = [];
-            rawBuffer = [];
-            filter.reset();
-
-            lockedRoadBearing = null;
-            lastAcceptedPoint = null;
-
-            resetStats();
-            setTrackingStatus(true);
-            startDurationTimer();
-
-            if (startMarker) map.removeLayer(startMarker);
-            if (stopMarker) map.removeLayer(stopMarker);
-            if (finalPolyline) map.removeLayer(finalPolyline);
-            if (livePolyline) map.removeLayer(livePolyline);
-            if (markerLive) map.removeLayer(markerLive);
-
-            startMarker = null;
-            stopMarker = null;
-            finalPolyline = null;
-            livePolyline = null;
-            markerLive = null;
-
-            if (typeof clearHistoryRoute === "function") {
-                clearHistoryRoute();
-            }
-
-            watchID = navigator.geolocation.watchPosition(
-
-                pos => {
-
-                    const acc = pos.coords.accuracy;
-
-                    if (acc > 20)
-                        return;
-
-                    let p = filter.update(
-                        pos.coords.latitude,
-                        pos.coords.longitude,
-                        acc
-                    );
-
-                    if (!p || isNaN(p[0]) || isNaN(p[1])) {
-                        console.log("Filter error — using raw GPS");
-                        p = [pos.coords.latitude, pos.coords.longitude];
-                    }
-
-                    // ================= GPS JUMP FILTER =================
-                    if (lastAcceptedPoint) {
-
-                        let dist = distance(lastAcceptedPoint, p);
-
-                        if (dist > 40) {
-                            console.log("GPS jump rejected");
-                            return;
-                        }
-
-                    }
-
-                    let accepted = headingStable(lastAcceptedPoint, p);
-
-                    if (accepted) {
-
-                        if (!markerLive) {
-                            markerLive = L.marker(p).addTo(map);
-                            map.setView(p, 17);
-                        }
-                        else {
-                            markerLive.setLatLng(p);
-                        }
-
-                        rawBuffer.push(p);
-
-                        const lat = p[0];
-                        const lon = p[1];
-                        if (lastPoint) {
-                            totalDistanceMeters += haversineDistance(
-                                lastPoint[0], lastPoint[1], lat, lon
-                            );
-                            updateDistanceDisplay();
-                        }
-                        lastPoint = [lat, lon];
-                        updatePointsCount(route.length + rawBuffer.length);
-
-                        lastAcceptedPoint = p;
-
-                    }
-                    else {
-                        console.log("Heading rejected noisy point");
-                    }
-
-                    if (accepted && route.length === 0 && !startMarker) {
-                        startMarker = L.marker(p)
-                            .addTo(map)
-                            .bindPopup("Tracking started Here")
-                            .openPopup();
-                    }
-
-                    if (rawBuffer.length >= SNAP_CHUNK_SIZE) {
-                        snapAndAppend([...rawBuffer]);
-                        rawBuffer = [];
-                    }
-
-                    redrawLive();
-                },
-
-                err => alert(err.message),
-
-                {
-                    enableHighAccuracy: true,
-                    maximumAge: 0,
-                    timeout: 9000
-                }
-            );
-
-            startBtn.disabled = true;
-            stopBtn.disabled = false;
-        };
-
-
-        // ================= STOP =================
-        stopBtn.onclick = async function () {
-
-            lockedRoadBearing = null;
-            lastAcceptedPoint = null;
-
-
-            navigator.geolocation.clearWatch(watchID);
-
-            watchID = null;
-
-            if (rawBuffer.length > 0) {
-                await snapAndAppend([...rawBuffer]);
-                rawBuffer = [];
-            }
-
-            if (route.length > 0) {
-
-                const last = route.at(-1);
-
-                stopMarker = L.marker(last)
-                    .addTo(map)
-                    .bindPopup("Tracking Stopped Here")
-                    .openPopup();
-            }
-
-            console.log(route);
-
-            await finalSave(route);
-
-            resetStats();
-
-            startBtn.disabled = false;
-            stopBtn.disabled = true;
-        };
-
-
-        // ================= AUTO SYNC =================
-        window.addEventListener("online", async function () {
-            const db = await dbPromise;
-            if (!db) return;
-
-            // Read all offline routes
-            const tx = db.transaction("offlineRoutes", "readonly");
-            const store = tx.objectStore("offlineRoutes");
-            const request = store.getAll();
-
-            request.onsuccess = async function () {
-                const allRoutes = request.result;
-                for (let entry of allRoutes) {
-                    try {
-                        await saveOnline(entry.route);
-
-                        // Transaction is auto-closed by IndexedDB during the await.
-                        // We MUST open a new transaction to delete the synced route.
-                        const delTx = db.transaction("offlineRoutes", "readwrite");
-                        delTx.objectStore("offlineRoutes").delete(entry.id);
-
-                        console.log("Synced route id:", entry.id);
-                    }
-                    catch {
-                        console.log("Sync failed, will retry later");
+        // Create single global instance
+        const motionFilter = new MotionFilter();
+
+        // ══════════════════════════════════════════════
+        // PART 1 — Global Variable Declarations
+        // ══════════════════════════════════════════════
+        let map;
+        let livePolyline = null;
+        let snappedPolyline = null;
+        let routePolyline = null;
+        let startMarker = null;
+        let endMarker = null;
+        let movingMarker = null;
+        let routePoints = [];
+        let smoothedBuffer = [];
+        let snapBatchBuffer = [];
+        let totalDistanceMeters = 0;
+        let lastPoint = null;
+        let isTracking = false;
+        let watchId = null;
+        let trackingStartTime = null;
+        let durationInterval = null;
+        let _activeAnimation = null;
+        let historyPage = 1;
+
+        let anchorPoints    = [];  // Road-snapped anchors
+        let lastAnchor      = null;
+        let roadPathBuffer  = [];  // Accumulated road geometry
+        const ANCHOR_DIST_M = 25;  // Get road path every 25m
+
+        // ══════════════════════════════════════════════
+        // PART 2 — Utility / Helper Functions
+        // ══════════════════════════════════════════════
+
+        // Django official CSRF cookie reader
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(
+                            cookie.substring(name.length + 1)
+                        );
                         break;
                     }
                 }
-            };
-        });
-
-        // ================= PERIODIC AUTO SYNC (OPTION B) =================
-        async function periodicSync() {
-            const db = await dbPromise;
-            if (!db) return;
-
-            // Read all offline routes
-            const tx = db.transaction("offlineRoutes", "readonly");
-            const store = tx.objectStore("offlineRoutes");
-
-            const request = store.getAll();
-
-            request.onsuccess = async function () {
-                const allRoutes = request.result;
-
-                for (let entry of allRoutes) {
-                    try {
-                        await saveOnline(entry.route);   // try sending to server
-
-                        // Transaction is auto-closed by IndexedDB during the await.
-                        // We MUST open a new transaction to delete the synced route.
-                        const delTx = db.transaction("offlineRoutes", "readwrite");
-                        delTx.objectStore("offlineRoutes").delete(entry.id);
-
-                        console.log("Periodic sync success for route id:", entry.id);
-                    } catch (err) {
-                        console.log("Periodic sync failed for route id:", entry.id);
-                        // leave it in IndexedDB for next attempt
-                    }
-                }
-            };
+            }
+            return cookieValue;
         }
 
-        // Run periodic sync every 20 seconds
-        setInterval(periodicSync, 20000);
-
-        // ================= REAL-TIME SNAP =================
-        let snapBusy = false;
-
-        async function snapAndAppend(chunk) {
-
-            if (snapBusy) {
-                route.push(...chunk);
-                redrawFinal();
-                return;
+        // Validates CSRF token before use
+        function getValidCsrfToken() {
+            const token = getCookie('csrftoken');
+            if (!token || token.length < 20) {
+                console.error('CSRF token invalid or missing');
+                return null;
             }
-
-            snapBusy = true;
-
-            try {
-                const controller = new AbortController();
-                const timeout = setTimeout(() => controller.abort(), 5000);
-
-                const res = await fetch("/snap_chunk/", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-CSRFToken": getCookie("csrftoken")
-                    },
-                    body: JSON.stringify({ points: chunk }),
-                    signal: controller.signal
-                });
-
-                clearTimeout(timeout);
-                handleResponseAuth(res);
-
-                if (!res.ok) throw new Error("snap failed");
-
-                const data = await res.json();
-                const snapped = data.snapped && data.snapped.length > 0 ? data.snapped : chunk;
-
-                route.push(...snapped);
-                console.log("Chunk snapped:", chunk.length, "→", snapped.length, "pts");
-
-                // --- NEW: Snap the blue dot to the last snapped road point ---
-                if (snapped.length > 0 && markerLive) {
-                    const snappedLastPos = snapped[snapped.length - 1];
-                    markerLive.setLatLng(snappedLastPos);
-                    map.panTo(snappedLastPos);
-                }
-
-            } catch (err) {
-                console.warn("Snap failed, using raw:", err.message);
-                route.push(...chunk);
-            }
-
-            snapBusy = false;
-            redrawFinal();
+            return token;
         }
 
-
-        // ================= VIEW OFFLINE =================
-        async function viewOffline() {
-
-            const db = await dbPromise;
-
-            if (!db) {
-                alert("IndexedDB not available");
-                return;
+        // Redirect to login on 401
+        function handleResponseAuth(res) {
+            if (res.status === 401) {
+                window.location.href = '/login/';
+                return false;
             }
-
-            const tx = db.transaction("offlineRoutes", "readonly");
-            const store = tx.objectStore("offlineRoutes");
-            const request = store.getAll();
-
-            request.onsuccess = function () {
-
-                const data = request.result;
-
-                if (data.length === 0) {
-                    document.getElementById("offlineData").innerText =
-                        "No offline routes stored.";
-                    return;
-                }
-
-                let output = "";
-
-                data.forEach((item, index) => {
-
-                    output += "Route " + (index + 1) + "\n";
-                    output += "Saved at: " +
-                        new Date(item.timestamp).toLocaleString() + "\n";
-                    output += "Total Points: " +
-                        item.route.length + "\n";
-                    output += JSON.stringify(item.route) + "\n\n";
-                });
-
-                document.getElementById("offlineData").innerText = output;
-            };
+            return true;
         }
 
+        function updateDistanceDisplay() {
+            const el = document.getElementById('distance-display');
+            if (!el) return;
+            el.textContent = totalDistanceMeters < 1000
+                ? Math.round(totalDistanceMeters) + ' m'
+                : (totalDistanceMeters / 1000).toFixed(2) + ' km';
+        }
 
-        // ================= ROUTE HISTORY =================
-        let historyPolyline = null;
-        let historyStartMarker = null;
-        let historyEndMarker = null;
-        let historyData = [];       // cache fetched data
-        let historyMeta = { current_page: 1, total_pages: 1 };
+        function updatePointsCount(count) {
+            const el = document.getElementById('points-count');
+            if (el) el.textContent = count;
+        }
+
+        function setTrackingStatus(active) {
+            const el = document.getElementById('tracking-status');
+            if (!el) return;
+            el.innerHTML = active
+                ? '<span class="status-dot live"></span>Live'
+                : '<span class="status-dot idle"></span>Idle';
+        }
+
+        function startDurationTimer() {
+            trackingStartTime = Date.now();
+            durationInterval = setInterval(() => {
+                const elapsed = Math.floor(
+                    (Date.now() - trackingStartTime) / 1000
+                );
+                const mins = String(
+                    Math.floor(elapsed / 60)).padStart(2, '0');
+                const secs = String(elapsed % 60).padStart(2, '0');
+                const el = document.getElementById('trip-duration');
+                if (el) el.textContent = mins + ':' + secs;
+            }, 1000);
+        }
+
+        function stopDurationTimer() {
+            if (durationInterval) {
+                clearInterval(durationInterval);
+                durationInterval = null;
+            }
+        }
+
+        function resetStats() {
+            totalDistanceMeters = 0;
+            lastPoint = null;
+            smoothedBuffer = [];
+            snapBatchBuffer = [];
+            updateDistanceDisplay();
+            updatePointsCount(0);
+            setTrackingStatus(false);
+            stopDurationTimer();
+            const el = document.getElementById('trip-duration');
+            if (el) el.textContent = '00:00';
+        }
 
         function formatDistance(meters) {
-            if (meters < 1000) {
-                return Math.round(meters) + ' m';
-            } else {
-                return (meters / 1000).toFixed(2) + ' km';
-            }
+            if (meters < 1000) return Math.round(meters) + ' m';
+            return (meters / 1000).toFixed(2) + ' km';
         }
 
         function formatDuration(seconds) {
-            if (seconds < 60) {
-                return Math.round(seconds) + ' sec';
-            } else if (seconds < 3600) {
-                const mins = Math.floor(seconds / 60);
-                const secs = Math.round(seconds % 60);
-                return mins + ' min ' + secs + ' sec';
-            } else {
-                const hrs = Math.floor(seconds / 3600);
-                const mins = Math.floor((seconds % 3600) / 60);
-                return hrs + ' hr ' + mins + ' min';
+            if (seconds < 60) return seconds + ' sec';
+            if (seconds < 3600) {
+                return Math.floor(seconds / 60) + ' min '
+                    + (seconds % 60) + ' sec';
+            }
+            return Math.floor(seconds / 3600) + ' hr '
+                + Math.floor((seconds % 3600) / 60) + ' min';
+        }
+
+        // ══════════════════════════════════════════════
+        // PART 3 — Marker Helper (AdvancedMarkerElement)
+        // ══════════════════════════════════════════════
+
+        function placeMarker(lat, lon, color, title, scale) {
+            const parsedLat = parseFloat(lat);
+            const parsedLon = parseFloat(lon);
+            if (isNaN(parsedLat) || isNaN(parsedLon)) {
+                console.error('placeMarker: invalid coords', lat, lon);
+                return null;
+            }
+            const pin = new google.maps.marker.PinElement({
+                background: color,
+                borderColor: '#ffffff',
+                glyphColor: '#ffffff',
+                scale: scale || 1.2
+            });
+            return new google.maps.marker.AdvancedMarkerElement({
+                position: { lat: parsedLat, lng: parsedLon },
+                map: map,
+                title: title,
+                content: pin
+            });
+        }
+
+        function removeMarker(marker) {
+            if (marker) marker.map = null;
+            return null;
+        }
+
+        function createNavigationMarker(lat, lon) {
+            // Custom navigation arrow SVG — points upward at 0deg
+            const arrowSvg = `
+              <svg xmlns="http://www.w3.org/2000/svg"
+                   width="40" height="40" viewBox="0 0 40 40">
+                <circle cx="20" cy="20" r="18"
+                        fill="#4285F4" fill-opacity="0.2"
+                        stroke="#4285F4" stroke-width="1.5"/>
+                <circle cx="20" cy="20" r="8"
+                        fill="#4285F4" stroke="white"
+                        stroke-width="2.5"/>
+                <polygon points="20,4 26,18 20,14 14,18"
+                         fill="white"/>
+              </svg>`;
+
+            const div = document.createElement('div');
+            div.id = 'nav-marker';
+            div.style.cssText = `
+              width: 40px;
+              height: 40px;
+              transform-origin: center;
+              transform: rotate(0deg);
+              transition: transform 0.3s ease;
+              cursor: default;
+            `;
+            div.innerHTML = arrowSvg;
+
+            return new google.maps.marker.AdvancedMarkerElement({
+                position: { lat: parseFloat(lat), lng: parseFloat(lon) },
+                map: map,
+                title: 'Current Position',
+                content: div
+            });
+        }
+
+        function updateMarkerHeading(fromPoint, toPoint) {
+            if (!movingMarker || !fromPoint || !toPoint) return;
+
+            const heading = google.maps.geometry.spherical
+                .computeHeading(
+                    new google.maps.LatLng(
+                        parseFloat(fromPoint.lat),
+                        parseFloat(fromPoint.lon)
+                    ),
+                    new google.maps.LatLng(
+                        parseFloat(toPoint.lat),
+                        parseFloat(toPoint.lon)
+                    )
+                );
+
+            const markerDiv = document.getElementById('nav-marker');
+            if (markerDiv) {
+                markerDiv.style.transform = `rotate(${heading}deg)`;
             }
         }
 
+        // ══════════════════════════════════════════════
+        // PART 4 — Google Maps Initialization
+        // ══════════════════════════════════════════════
+
+        function initGoogleMap() {
+            map = new google.maps.Map(
+                document.getElementById('map'), {
+                center: { lat: 16.7050, lng: 74.2433 },
+                zoom: 15,
+                mapTypeId: 'roadmap',
+                mapId: 'GPS_ROUTE_TRACKER_MAP',
+                zoomControl: true,
+                mapTypeControl: false,
+                scaleControl: true,
+                streetViewControl: false,
+                rotateControl: false,
+                fullscreenControl: true
+            }
+            );
+        }
+
+        // CRITICAL — must be assigned before Google Maps loads
+        window.initMap = initGoogleMap;
+
+        // ══════════════════════════════════════════════
+        // PART 5 — GPS Pipeline Functions
+        // ══════════════════════════════════════════════
+
+        // Adaptive sampling interval based on speed
+        function getSamplingInterval(speedMs) {
+            if (speedMs === null || speedMs === undefined) return 2000;
+            if (speedMs < 0.5) return 8000; // stationary
+            if (speedMs < 3.0) return 2000; // walking
+            return 1000;                      // driving
+        }
+
+        // Confidence check — rejects physically impossible jumps
+        function calculateConfidence(point, last) {
+            if (!last) return true;
+            const R = 6371000;
+            const dLat = (point.lat - last.lat) * Math.PI / 180;
+            const dLon = (point.lon - last.lon) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) ** 2 +
+                Math.cos(last.lat * Math.PI / 180) *
+                Math.cos(point.lat * Math.PI / 180) *
+                Math.sin(dLon / 2) ** 2;
+            const dist = R * 2 * Math.atan2(
+                Math.sqrt(a), Math.sqrt(1 - a)
+            );
+            // Reject if distance implies > 200km/h speed
+            return dist < 55;
+        }
+
+        // Moving average over last 3 points
+        function movingAverage(buffer, newPoint) {
+            const win = [...buffer.slice(-2), newPoint];
+            return {
+                lat: parseFloat((win.reduce((s, p) => s + p.lat, 0) / win.length).toFixed(7)),
+                lon: parseFloat((win.reduce((s, p) => s + p.lon, 0) / win.length).toFixed(7))
+            };
+        }
+
+        // Snap single point to road via backend
+        async function snapPoint(point) {
+            return { lat: parseFloat(point.lat), lon: parseFloat(point.lon) };
+        }
+
+        function haversineJS(lat1, lon1, lat2, lon2) {
+            const R    = 6371000;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a    = Math.sin(dLat/2)**2 +
+                         Math.cos(lat1 * Math.PI/180) *
+                         Math.cos(lat2 * Math.PI/180) *
+                         Math.sin(dLon/2)**2;
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        }
+
+        // Process batch of points through snap endpoint
+        async function processSnapBatch(batch) {
+            if (batch.length === 0) return [];
+            try {
+                const csrf = getValidCsrfToken();
+                if (!csrf) return batch;
+                const res = await fetch('/snap_chunk/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrf
+                    },
+                    body: JSON.stringify({ points: batch })
+                });
+                if (!handleResponseAuth(res)) return batch;
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.snapped && data.snapped.length > 0) {
+                        return data.snapped.map(p => ({
+                            lat: parseFloat(p.lat ?? p[0]),
+                            lon: parseFloat(p.lon ?? p.lng ?? p[1])
+                        }));
+                    }
+                }
+            } catch (e) { console.error('processSnapBatch error:', e); }
+            return batch;
+        }
+
+        // ══════════════════════════════════════════════
+        // PART 6 — Smooth Marker Animation
+        // ══════════════════════════════════════════════
+
+        function smoothMoveMarker(marker, sLat, sLng, eLat, eLng, dur) {
+            // Cancel any in-progress animation first
+            if (_activeAnimation) {
+                cancelAnimationFrame(_activeAnimation);
+                _activeAnimation = null;
+            }
+            const start = performance.now();
+            function step(now) {
+                const t = Math.min((now - start) / dur, 1);
+                marker.position = {
+                    lat: sLat + (eLat - sLat) * t,
+                    lng: sLng + (eLng - sLng) * t
+                };
+                if (t < 1) {
+                    _activeAnimation = requestAnimationFrame(step);
+                } else {
+                    _activeAnimation = null;
+                }
+            }
+            _activeAnimation = requestAnimationFrame(step);
+        }
+
+        // ══════════════════════════════════════════════
+        // PART 7 — GPS Success / Error Callbacks
+        // ══════════════════════════════════════════════
+
+        async function onGPSSuccess(position) {
+            if (!isTracking) return;
+
+            const rawLat = parseFloat(position.coords.latitude);
+            const rawLon = parseFloat(position.coords.longitude);
+            const acc    = position.coords.accuracy || 20;
+
+            if (isNaN(rawLat) || isNaN(rawLon)) return;
+
+            // Apply motion filter for smooth movement
+            const [filtLat, filtLon] = motionFilter.update(
+                rawLat, rawLon, acc
+            );
+
+            // Confidence check — reject impossible jumps
+            if (!calculateConfidence(
+                { lat: filtLat, lon: filtLon }, lastPoint
+            )) return;
+
+            // Distance filter — ignore micro movements < 3m
+            if (lastPoint) {
+                const dist = haversineJS(
+                    lastPoint.lat, lastPoint.lon, filtLat, filtLon
+                );
+                if (dist < 3) return;
+            }
+
+            const currentPoint = { lat: filtLat, lon: filtLon };
+
+            // ── LAYER 1: Draw live point IMMEDIATELY ──────
+            // Zero lag — user sees movement right away
+            if (livePolyline) {
+                livePolyline.getPath().push(
+                    new google.maps.LatLng(filtLat, filtLon)
+                );
+            }
+
+            // Place start marker on very first point
+            if (!startMarker && !lastPoint) {
+                startMarker = placeMarker(
+                    filtLat, filtLon, '#34A853', 'Start', 1.2
+                );
+            }
+
+            // Update moving navigation marker immediately
+            if (!movingMarker) {
+                movingMarker = createNavigationMarker(
+                    filtLat, filtLon
+                );
+            } else if (lastPoint) {
+                updateMarkerHeading(lastPoint, currentPoint);
+                smoothMoveMarker(
+                    movingMarker,
+                    parseFloat(lastPoint.lat),
+                    parseFloat(lastPoint.lon),
+                    filtLat, filtLon, 800
+                );
+            }
+
+            // Update distance using raw movement
+            if (lastPoint) {
+                const seg = haversineJS(
+                    lastPoint.lat, lastPoint.lon,
+                    filtLat, filtLon
+                );
+                if (!isNaN(seg) && isFinite(seg) && seg < 200) {
+                    totalDistanceMeters += seg;
+                    updateDistanceDisplay();
+                }
+            }
+
+            lastPoint = currentPoint;
+            updatePointsCount(routePoints.length);
+            map.panTo({ lat: filtLat, lng: filtLon });
+
+            // ── LAYER 2: Road path every 25 meters ────────
+            // Non-blocking — fires in background
+            // Does NOT cause any visible lag
+            if (!lastAnchor) {
+                lastAnchor = currentPoint;
+                anchorPoints.push(currentPoint);
+                routePoints.push(currentPoint);
+                return;
+            }
+
+            const distFromAnchor = haversineJS(
+                lastAnchor.lat, lastAnchor.lon,
+                filtLat, filtLon
+            );
+
+            if (distFromAnchor >= ANCHOR_DIST_M) {
+                const origin      = { ...lastAnchor };
+                const destination = { ...currentPoint };
+                lastAnchor        = currentPoint;
+                anchorPoints.push(currentPoint);
+
+                // Fire road path request in background
+                // Using async IIFE so it never blocks GPS callback
+                ;(async () => {
+                    try {
+                        const csrf = getValidCsrfToken();
+                        if (!csrf) return;
+
+                        const res = await fetch('/get_road_path/', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type':  'application/json',
+                                'X-CSRFToken':   csrf
+                            },
+                            body: JSON.stringify({ origin, destination })
+                        });
+
+                        if (!handleResponseAuth(res)) return;
+                        if (!res.ok) return;
+
+                        const data = await res.json();
+                        const roadPoints = data.path || [];
+
+                        if (roadPoints.length < 2) return;
+
+                        // Add road geometry points to routePoints
+                        roadPoints.forEach(p => {
+                            const rLat = parseFloat(p.lat);
+                            const rLon = parseFloat(p.lon);
+                            if (!isNaN(rLat) && !isNaN(rLon)) {
+                                routePoints.push({ lat: rLat, lon: rLon });
+                            }
+                        });
+
+                        // Redraw snapped polyline with road geometry
+                        // This replaces straight lines with real roads
+                        if (snappedPolyline && routePoints.length > 1) {
+                            snappedPolyline.setPath(
+                                routePoints.map(p => ({
+                                    lat: parseFloat(p.lat),
+                                    lng: parseFloat(p.lon)
+                                }))
+                            );
+                        }
+
+                    } catch(e) {
+                        // Silent fail — live tracking continues unaffected
+                        console.warn('Road path fetch failed:', e.message);
+                    }
+                })();
+            }
+        }
+
+        function onGPSError(error) {
+            console.error('GPS Error:', error.code, error.message);
+        }
+
+        // ══════════════════════════════════════════════
+        // PART 8 — Start / Stop Tracking
+        // ══════════════════════════════════════════════
+
+        function startTracking() {
+            // Reset all state
+            routePoints      = [];
+            anchorPoints     = [];
+            roadPathBuffer   = [];
+            lastAnchor       = null;
+            motionFilter.reset();
+            resetStats();
+
+            // Remove existing layers
+            if (livePolyline)    { livePolyline.setMap(null);    livePolyline    = null; }
+            if (snappedPolyline) { snappedPolyline.setMap(null); snappedPolyline = null; }
+            if (routePolyline)   { routePolyline.setMap(null);   routePolyline   = null; }
+            startMarker  = removeMarker(startMarker);
+            endMarker    = removeMarker(endMarker);
+            movingMarker = removeMarker(movingMarker);
+
+            const card = document.getElementById('route-summary');
+            if (card) card.remove();
+
+            // LAYER 1 — Visible live tracking line
+            // Shows immediately as user moves
+            livePolyline = new google.maps.Polyline({
+                path:          [],
+                geodesic:      true,
+                strokeColor:   '#4285F4',
+                strokeOpacity: 0.35,  // Faint — shows raw GPS
+                strokeWeight:  4,
+                map:           map
+            });
+
+            // LAYER 2 — Road-accurate snapped line
+            // Updates in background as road paths return
+            snappedPolyline = new google.maps.Polyline({
+                path:          [],
+                geodesic:      true,
+                strokeColor:   '#1a73e8',  // Slightly darker blue
+                strokeOpacity: 1.0,        // Solid — this is the true route
+                strokeWeight:  6,
+                map:           map,
+                zIndex:        10          // Renders on top of live line
+            });
+
+            setTrackingStatus(true);
+            startDurationTimer();
+            isTracking = true;
+
+            if (!navigator.geolocation) {
+                alert('Geolocation not supported.');
+                return;
+            }
+
+            watchId = navigator.geolocation.watchPosition(
+                onGPSSuccess, onGPSError,
+                {
+                    enableHighAccuracy: true,
+                    timeout:            10000,
+                    maximumAge:         0
+                }
+            );
+        }
+
+        async function stopTracking() {
+            if (!isTracking) return;
+            isTracking = false;
+            setTrackingStatus(false);
+            stopDurationTimer();
+
+            if (watchId !== null) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+            }
+
+            movingMarker = removeMarker(movingMarker);
+
+            // Wait briefly for any in-flight road path
+            // requests to complete before saving
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
+            if (routePoints.length === 0) {
+                alert('No route points recorded.');
+                return;
+            }
+
+            // Place end marker at last known position
+            if (lastPoint) {
+                const endLat = parseFloat(lastPoint.lat);
+                const endLon = parseFloat(lastPoint.lon);
+                if (!isNaN(endLat) && !isNaN(endLon)) {
+                    endMarker = placeMarker(
+                        endLat, endLon, '#EA4335', 'End Point', 1.2
+                    );
+                }
+            }
+
+            // Save road-snapped route to backend
+            const csrf = getValidCsrfToken();
+            if (!csrf) {
+                alert('Security token missing. Please refresh.');
+                return;
+            }
+
+            try {
+                const res = await fetch('/save_route/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken':  csrf
+                    },
+                    body: JSON.stringify({ points: routePoints })
+                });
+                if (!handleResponseAuth(res)) return;
+                if (res.ok) {
+                    console.log('Route saved successfully');
+                } else {
+                    const err = await res.json();
+                    alert('Save failed: ' + (err.message || err.error));
+                }
+            } catch(e) {
+                console.error('Save error:', e);
+            }
+        }
+
+        // ══════════════════════════════════════════════
+        // PART 9 — Route History
+        // ══════════════════════════════════════════════
+
+        async function viewHistory(page = 1) {
+            try {
+                const res = await fetch(
+                    `/route_history/?page=${page}&limit=10`,
+                    { method: 'GET', headers: { 'Content-Type': 'application/json' } }
+                );
+                if (!handleResponseAuth(res)) return;
+                if (!res.ok) return;
+
+                const data = await res.json();
+                const list = document.getElementById('history-list');
+
+                if (page === 1) list.innerHTML = '';
+
+                if (data.routes.length === 0 && page === 1) {
+                    list.innerHTML = '<p style="color:var(--text-secondary);text-align:center;padding:20px;">No routes saved yet.</p>';
+                }
+
+                data.routes.forEach(route => {
+                    const card = document.createElement('div');
+                    card.className = 'history-route-card';
+                    card.innerHTML = `
+          <div class="history-route-title">
+            Route — ${route.created_at}
+          </div>
+          <div class="history-route-stats">
+            <div class="history-stat">
+              Distance: <span>${formatDistance(route.distance_meters)}</span>
+            </div>
+            <div class="history-stat">
+              Duration: <span>${formatDuration(route.duration_seconds)}</span>
+            </div>
+            <div class="history-stat">
+              Points: <span>${route.total_points}</span>
+            </div>
+          </div>
+          <button class="btn-view-route"
+            onclick="loadHistoryRoute(${JSON.stringify(route).replace(/"/g, '&quot;')})">
+            View on Map
+          </button>
+        `;
+                    list.appendChild(card);
+                });
+
+                // Load More button
+                const existingLoadMore = document.getElementById('load-more-btn');
+                if (existingLoadMore) existingLoadMore.remove();
+
+                if (data.current_page < data.total_pages) {
+                    const btn = document.createElement('button');
+                    btn.id = 'load-more-btn';
+                    btn.className = 'load-more-btn';
+                    btn.textContent = 'Load More';
+                    btn.onclick = () => viewHistory(data.current_page + 1);
+                    list.appendChild(btn);
+                }
+
+                document.getElementById('history-modal').style.display = 'block';
+
+            } catch (e) { console.error('History error:', e); }
+        }
+
+        function closeHistoryModal() {
+            document.getElementById('history-modal').style.display = 'none';
+        }
+
+        function loadHistoryRoute(routeData) {
+            if (livePolyline) { livePolyline.setMap(null); livePolyline = null; }
+            if (snappedPolyline) { snappedPolyline.setMap(null); snappedPolyline = null; }
+            if (routePolyline) { routePolyline.setMap(null); routePolyline = null; }
+            startMarker = removeMarker(startMarker);
+            endMarker = removeMarker(endMarker);
+
+            const rawPoints = routeData.route_points;
+            if (!rawPoints || rawPoints.length === 0) {
+                console.error('No route points in history data');
+                return;
+            }
+
+            // Normalize every point to {lat: float, lng: float}
+            // for Google Maps — handles all possible formats
+            const path = [];
+            rawPoints.forEach((p, i) => {
+                let lat, lon;
+                try {
+                    if (Array.isArray(p)) {
+                        lat = parseFloat(p[0]);
+                        lon = parseFloat(p[1]);
+                    } else if (typeof p === 'object') {
+                        lat = parseFloat(
+                            p.lat ?? p.latitude ?? p[0] ?? 0
+                        );
+                        lon = parseFloat(
+                            p.lon ?? p.lng ?? p.longitude ?? p[1] ?? 0
+                        );
+                    }
+                    if (!isNaN(lat) && !isNaN(lon) &&
+                        lat >= -90 && lat <= 90 &&
+                        lon >= -180 && lon <= 180) {
+                        path.push({ lat, lng: lon });
+                    }
+                } catch (e) {
+                    console.warn(`Skipping invalid point at index ${i}:`, p);
+                }
+            });
+
+            if (path.length < 2) {
+                alert('Not enough valid points to display this route.');
+                return;
+            }
+
+            // Draw historical polyline
+            routePolyline = new google.maps.Polyline({
+                path: path,
+                geodesic: true,
+                strokeColor: '#4285F4',
+                strokeOpacity: 0.9,
+                strokeWeight: 5,
+                map: map
+            });
+
+            // RED start marker
+            startMarker = placeMarker(
+                path[0].lat, path[0].lng,
+                '#EA4335', 'Start Point', 1.2
+            );
+
+            // BLUE end marker
+            const last = path[path.length - 1];
+            endMarker = placeMarker(
+                last.lat, last.lng,
+                '#4285F4', 'End Point', 1.2
+            );
+
+            // Safe fitBounds
+            try {
+                const bounds = new google.maps.LatLngBounds();
+                path.forEach(p => bounds.extend(p));
+                if (!bounds.isEmpty()) {
+                    map.fitBounds(bounds, { padding: 60 });
+                }
+            } catch (e) {
+                console.error('fitBounds error:', e);
+                map.setCenter(path[0]);
+                map.setZoom(15);
+            }
+
+            showRouteSummaryCard(routeData);
+            closeHistoryModal();
+        }
+
+        function showRouteSummaryCard(routeData) {
+            const existing = document.getElementById('route-summary');
+            if (existing) existing.remove();
+
+            const card = document.createElement('div');
+            card.id = 'route-summary';
+            card.className = 'route-summary-card';
+            card.innerHTML = `
+      <div class="summary-header">
+        <span class="summary-title">Viewing Saved Route</span>
+        <button class="btn-clear-route"
+                onclick="clearHistoryRoute()">✕ Clear</button>
+      </div>
+      <div class="summary-stats">
+        <div class="summary-stat">
+          <span class="summary-label">Distance</span>
+          <span class="summary-value">
+            ${formatDistance(routeData.distance_meters)}
+          </span>
+        </div>
+        <div class="summary-stat">
+          <span class="summary-label">Duration</span>
+          <span class="summary-value">
+            ${formatDuration(routeData.duration_seconds)}
+          </span>
+        </div>
+        <div class="summary-stat">
+          <span class="summary-label">Points</span>
+          <span class="summary-value">
+            ${routeData.total_points}
+          </span>
+        </div>
+        <div class="summary-stat">
+          <span class="summary-label">Saved On</span>
+          <span class="summary-value"
+                style="font-size:13px;font-family:var(--font-body)">
+            ${routeData.created_at}
+          </span>
+        </div>
+      </div>
+      <div class="summary-legend">
+        <span class="legend-item">
+          <span class="legend-dot red"></span>Start Point
+        </span>
+        <span class="legend-item">
+          <span class="legend-dot blue"></span>End Point
+        </span>
+      </div>
+    `;
+
+            const mapWrapper = document.querySelector('.map-wrapper');
+            mapWrapper.insertAdjacentElement('afterend', card);
+        }
+
         function clearHistoryRoute() {
-            if (historyPolyline) { map.removeLayer(historyPolyline); historyPolyline = null; }
-            if (historyStartMarker) { map.removeLayer(historyStartMarker); historyStartMarker = null; }
-            if (historyEndMarker) { map.removeLayer(historyEndMarker); historyEndMarker = null; }
+            if (routePolyline) { routePolyline.setMap(null); routePolyline = null; }
+            startMarker = removeMarker(startMarker);
+            endMarker = removeMarker(endMarker);
             const card = document.getElementById('route-summary');
             if (card) card.remove();
         }
 
-        function closeHistory() {
-            document.getElementById('historyOverlay').classList.remove('active');
-        }
+        // ══════════════════════════════════════════════
+        // PART 10 — Button Event Bindings
+        // ══════════════════════════════════════════════
 
-        async function viewHistory(page = 1) {
+        document.addEventListener('DOMContentLoaded', () => {
+            const startBtn = document.getElementById('start-btn');
+            const stopBtn = document.getElementById('stop-btn');
+            const historyBtn = document.getElementById('history-btn');
 
-            const overlay = document.getElementById('historyOverlay');
-            const body = document.getElementById('historyBody');
-
-            overlay.classList.add('active');
-
-            if (page === 1) {
-                body.innerHTML = '<div class="history-empty">Loading…</div>';
-                historyData = [];
-            } else {
-                const btn = document.getElementById('loadMoreBtn');
-                if (btn) btn.innerHTML = 'Loading...';
-            }
-
-            try {
-                const res = await fetch(`/route_history/?page=${page}&limit=10`);
-                handleResponseAuth(res);
-
-                if (!res.ok) throw new Error('fetch failed');
-
-                const data = await res.json();
-                historyData = page === 1 ? (data.routes || []) : historyData.concat(data.routes || []);
-                historyMeta = data.metadata || { current_page: 1, total_pages: 1 };
-
-                if (historyData.length === 0) {
-                    body.innerHTML = '<div class="history-empty">No routes recorded yet.</div>';
-                    return;
-                }
-
-                // Group by date
-                const groups = {};
-                historyData.forEach((r, i) => {
-                    if (!groups[r.date]) groups[r.date] = [];
-                    groups[r.date].push({ ...r, _idx: i });
-                });
-
-                let html = '';
-                for (const [date, routes] of Object.entries(groups)) {
-                    html += '<div class="history-date-group">';
-                    html += '<div class="history-date-label">📅 ' + date + '</div>';
-
-                    for (const r of routes) {
-                        html += '<div class="history-route-card" onclick="showRouteOnMap(' + r._idx + ')">';
-                        html += '  <div class="history-route-title">📍 Route — ' + date + ', ' + r.time + '</div>';
-                        html += '  <div class="history-route-stats">';
-                        html += '    <div class="history-stat">📏 Distance: <span>' + formatDistance(r.distance_meters) + '</span></div>';
-                        html += '    <div class="history-stat">⏱ Duration: <span>' + formatDuration(r.duration_seconds) + '</span></div>';
-                        html += '    <div class="history-stat">📌 Points: <span>' + r.total_points + '</span></div>';
-                        html += '  </div>';
-                        html += '  <button class="btn-view-route">View on Map</button>';
-                        html += '</div>';
-                    }
-
-                    html += '</div>';
-                }
-
-                if (historyMeta.current_page < historyMeta.total_pages) {
-                    html += `<div style="text-align: center; margin-top: 15px; margin-bottom: 10px;">
-                                <button id="loadMoreBtn" onclick="viewHistory(${historyMeta.current_page + 1})" style="padding: 8px 16px; font-size: 0.85rem; background: rgba(127, 90, 240, 0.2); border: 1px solid rgba(127, 90, 240, 0.4); border-radius: 8px; color: #fffffe; cursor: pointer;">Load More</button>
-                             </div>`;
-                }
-
-                body.innerHTML = html;
-
-            } catch (err) {
-                if (err.message && err.message.includes("Unauthorized")) return;
-                body.innerHTML = '<div class="history-empty">Failed to load history.</div>';
-                console.error(err);
-            }
-        }
-
-        function showRouteOnMap(idx) {
-
-            const r = historyData[idx];
-            if (!r || !r.route_points) return;
-
-            clearHistoryRoute();
-
-            const coords = r.route_points;
-            if (coords.length === 0) return;
-
-            historyPolyline = L.polyline(coords, {
-                color: '#4285F4',
-                weight: 5,
-                opacity: 0.9,
-                lineJoin: 'round',
-                lineCap: 'round',
-                smoothFactor: 2.0
-            }).addTo(map);
-
-            historyStartMarker = L.circleMarker(coords[0], {
-                radius: 10,
-                fillColor: '#EA4335',
-                color: '#ffffff',
-                weight: 3,
-                opacity: 1,
-                fillOpacity: 1
-            }).addTo(map).bindPopup('<b>Start Point</b><br>' + coords[0][0].toFixed(5) + ', ' + coords[0][1].toFixed(5));
-
-            const lastCoord = coords[coords.length - 1];
-            historyEndMarker = L.circleMarker(lastCoord, {
-                radius: 10,
-                fillColor: '#4285F4',
-                color: '#ffffff',
-                weight: 3,
-                opacity: 1,
-                fillOpacity: 1
-            }).addTo(map).bindPopup('<b>End Point</b><br>' + lastCoord[0].toFixed(5) + ', ' + lastCoord[1].toFixed(5));
-
-            map.fitBounds(historyPolyline.getBounds(), { padding: [40, 40] });
-            setTimeout(() => { map.invalidateSize(); }, 200);
-
-            showRouteSummaryCard(r);
-            closeHistory();
-        }
-
-        function showRouteSummaryCard(r) {
-            let existing = document.getElementById('route-summary');
-            if (existing) existing.remove();
-
-            const html = `
-              <div class="route-summary-card" id="route-summary">
-                <div class="summary-header">
-                  <span class="summary-title">📍 Viewing Saved Route</span>
-                  <button onclick="clearHistoryRoute()" class="btn-clear-route">✕ Clear</button>
-                </div>
-                <div class="summary-stats">
-                  <div class="summary-stat">
-                    <span class="summary-label">Distance</span>
-                    <span class="summary-value" id="summary-distance">${formatDistance(r.distance_meters)}</span>
-                  </div>
-                  <div class="summary-stat">
-                    <span class="summary-label">Duration</span>
-                    <span class="summary-value" id="summary-duration">${formatDuration(r.duration_seconds)}</span>
-                  </div>
-                  <div class="summary-stat">
-                    <span class="summary-label">Points Logged</span>
-                    <span class="summary-value" id="summary-points">${r.total_points}</span>
-                  </div>
-                  <div class="summary-stat">
-                    <span class="summary-label">Saved On</span>
-                    <span class="summary-value" id="summary-date">${r.date}</span>
-                  </div>
-                </div>
-                <div class="summary-legend">
-                  <span class="legend-item"><span class="legend-dot red"></span> Start Point</span>
-                  <span class="legend-item"><span class="legend-dot blue"></span> End Point</span>
-                </div>
-              </div>
-            `;
-
-            document.querySelector('.map-wrapper').insertAdjacentHTML('afterend', html);
-        }
-
+            if (startBtn) startBtn.addEventListener('click', startTracking);
+            if (stopBtn) stopBtn.addEventListener('click', stopTracking);
+            if (historyBtn) historyBtn.addEventListener(
+                'click', () => viewHistory(1)
+            );
+        });
     </script>
+    <script
+        src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_API_KEY }}&loading=async&callback=initMap&libraries=geometry,marker"
+        async defer>
+        </script>
+</head>
+
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4285F4" stroke-width="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
+                <circle cx="12" cy="10" r="3" />
+            </svg>
+            Live Route Tracker
+        </div>
+        <div class="navbar-right">
+            <div class="user-badge">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                </svg>
+                {{ request.user.username }}
+            </div>
+            <a href="/logout/" class="btn-logout">Logout</a>
+        </div>
+    </nav>
+
+    <!-- Hidden CSRF form — required for AJAX on AJAX-only pages -->
+    <form style="display:none;">{% csrf_token %}</form>
+
+    <div class="main-container">
+        <h1 class="page-title">GPS Route Tracker</h1>
+
+        <!-- Stats Bar -->
+        <div class="stats-bar">
+            <div class="stat-card">
+                <span class="stat-label">Status</span>
+                <span class="stat-value" id="tracking-status">
+                    <span class="status-dot idle"></span>Idle
+                </span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Distance</span>
+                <span class="stat-value" id="distance-display">0 m</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Points</span>
+                <span class="stat-value" id="points-count">0</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Duration</span>
+                <span class="stat-value" id="trip-duration">00:00</span>
+            </div>
+        </div>
+
+        <!-- Control Buttons -->
+        <div class="controls">
+            <button id="start-btn" class="btn btn-start">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <polygon points="5,3 19,12 5,21" />
+                </svg>
+                Start Tracking
+            </button>
+            <button id="stop-btn" class="btn btn-stop">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                </svg>
+                Stop Tracking
+            </button>
+            <button id="history-btn" class="btn btn-outline">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12,6 12,12 16,14" />
+                </svg>
+                Route History
+            </button>
+            <button id="offline-btn" class="btn btn-outline">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="1" y1="1" x2="23" y2="23" />
+                    <path d="M16.72 11.06A10.94 10.94 0 0119 12.55" />
+                    <path d="M5 12.55a10.94 10.94 0 015.17-2.39" />
+                </svg>
+                Offline Routes
+            </button>
+        </div>
+
+        <!-- Map -->
+        <div class="map-wrapper">
+            <div id="map"></div>
+        </div>
+
+        <!-- Route summary card injected here dynamically -->
+
+        <!-- Turn by Turn Instructions -->
+        <div class="instructions-card">
+            <div class="instructions-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4285F4" stroke-width="2"
+                    style="margin-right:8px;vertical-align:middle">
+                    <polygon points="3,11 22,2 13,21 11,13" />
+                </svg>
+                Turn-by-Turn Instructions
+            </div>
+            <div class="instructions-body" id="instructions-body">
+                Start tracking to see route instructions.
+            </div>
+        </div>
+    </div>
+
+    <!-- History Modal -->
+    <div id="history-modal" style="display:none; position:fixed;
+       top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8);
+       z-index:2000; overflow-y:auto; padding:20px;">
+        <div style="max-width:700px; margin:40px auto; background:var(--bg-card);
+                border-radius:16px; padding:24px; border:1px solid var(--border);">
+            <div style="display:flex; justify-content:space-between;
+                  align-items:center; margin-bottom:20px;">
+                <h2 style="font-size:18px; font-weight:700;">Route History</h2>
+                <button onclick="closeHistoryModal()" style="background:transparent; border:none;
+                       color:var(--text-secondary); font-size:20px;
+                       cursor:pointer;">✕</button>
+            </div>
+            <div id="history-list"></div>
+        </div>
+    </div>
 </body>
 
 </html>
