@@ -9,6 +9,8 @@ logs/
 logs/*.log
 db.sqlite3
 .DS_Store
+data/
+staticfiles/
 
 # Environments
 env/

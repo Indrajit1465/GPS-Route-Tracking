@@ -1,46 +1,291 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport"
-        content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>User Detail — Admin Panel</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Fira+Sans:wght@300;400;600;700&display=swap"
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Fira+Sans:wght@300;400;600;700&display=swap"
     rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     /* ── Design System ── */
     :root {
-      --bg:          #080c14;
-      --bg-card:     #0d1117;
+      --bg: #080c14;
+      --bg-card: #0d1117;
       --bg-elevated: #161b22;
-      --border:      rgba(255,255,255,0.07);
-      --border-bright: rgba(255,255,255,0.15);
-      --primary:     #4285F4;
-      --primary-dim: rgba(66,133,244,0.12);
-      --success:     #34A853;
-      --success-dim: rgba(52,168,83,0.12);
-      --danger:      #EA4335;
-      --danger-dim:  rgba(234,67,53,0.12);
-      --warning:     #FBBC05;
-      --warning-dim: rgba(251,188,5,0.12);
-      --text:        #e6edf3;
-      --text-muted:  #7d8590;
-      --text-dim:    #484f58;
-      --font:        'Fira Sans', sans-serif;
-      --mono:        'Fira Code', monospace;
-      --radius:      10px;
-      --radius-lg:   16px;
+      --border: rgba(255, 255, 255, 0.07);
+      --border-bright: rgba(255, 255, 255, 0.15);
+      --primary: #4285F4;
+      --primary-dim: rgba(66, 133, 244, 0.12);
+      --success: #34A853;
+      --success-dim: rgba(52, 168, 83, 0.12);
+      --danger: #EA4335;
+      --danger-dim: rgba(234, 67, 53, 0.12);
+      --warning: #FBBC05;
+      --warning-dim: rgba(251, 188, 5, 0.12);
+      --text: #e6edf3;
+      --text-muted: #7d8590;
+      --text-dim: #484f58;
+      --font: 'Fira Sans', sans-serif;
+      --mono: 'Fira Code', monospace;
+      --radius: 10px;
+      --radius-lg: 16px;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    /* ── Filter Panel ──────────────────────────── */
+    .filter-panel {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .filter-panel-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--mono);
+    }
+
+    .filter-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .filter-label {
+      font-size: 10px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      font-family: var(--mono);
+    }
+
+    .filter-input {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 12px;
+      padding: 6px 8px;
+      font-family: var(--mono);
+      width: 100%;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .filter-input:focus {
+      border-color: var(--primary);
+    }
+
+    /* Profile chips */
+    .filter-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+
+    .chip {
+      padding: 3px 9px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .chip.active {
+      background: rgba(66,133,244,0.15);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .chip:hover:not(.active) {
+      border-color: var(--border-bright);
+      color: var(--text);
+    }
+
+    /* Metric tabs */
+    .metric-tabs {
+      display: flex;
+      gap: 4px;
+    }
+
+    .metric-tab {
+      flex: 1;
+      padding: 5px 4px;
+      font-size: 10px;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: center;
+      font-family: var(--font);
+    }
+
+    .metric-tab.active {
+      background: var(--primary-dim);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    /* Quick range */
+    .quick-range {
+      display: flex;
+      gap: 4px;
+    }
+
+    .quick-btn {
+      flex: 1;
+      padding: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: var(--mono);
+    }
+
+    .quick-btn.active,
+    .quick-btn:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: var(--primary-dim);
+    }
+
+    /* Apply button */
+    .btn-apply-filter {
+      width: 100%;
+      padding: 9px;
+      background: var(--primary);
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: var(--font);
+    }
+
+    .btn-apply-filter:hover {
+      background: var(--primary-dark);
+      transform: translateY(-1px);
+    }
+
+    /* ── Graph Summary Strip ───────────────────── */
+    .graph-summary {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+    }
+
+    .gsumm-item {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 6px;
+      text-align: center;
+    }
+
+    .gsumm-label {
+      font-size: 9px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      display: block;
+      margin-bottom: 3px;
+      font-family: var(--mono);
+    }
+
+    .gsumm-val {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--primary);
+      font-family: var(--mono);
+    }
+
+    /* ── Graph Wrapper ─────────────────────────── */
+    .graph-wrapper {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px;
+      min-height: 220px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .graph-loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+
+    .graph-spinner {
+      width: 24px;
+      height: 24px;
+      border: 2px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .graph-empty {
+      color: var(--text-muted);
+      font-size: 13px;
+      text-align: center;
+      padding: 20px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
     body {
       background: var(--bg);
       color: var(--text);
       font-family: var(--font);
       min-height: 100vh;
-      overflow: hidden; /* Prevent full body scroll, panel scrolls instead */
+      overflow: hidden;
+      /* Prevent full body scroll, panel scrolls instead */
     }
 
     /* ── Top Navigation Bar ── */
@@ -56,6 +301,7 @@
       top: 0;
       z-index: 100;
     }
+
     .topbar-brand {
       display: flex;
       align-items: center;
@@ -64,6 +310,7 @@
       font-weight: 700;
       letter-spacing: -0.3px;
     }
+
     .admin-badge {
       background: var(--danger-dim);
       border: 1px solid var(--danger);
@@ -75,19 +322,23 @@
       letter-spacing: 1px;
       text-transform: uppercase;
     }
+
     .topbar-right {
       display: flex;
       align-items: center;
       gap: 16px;
     }
+
     .topbar-user {
       font-size: 13px;
       color: var(--text-muted);
     }
+
     .topbar-user span {
       color: var(--text);
       font-weight: 600;
     }
+
     .btn-logout-admin {
       background: transparent;
       border: 1px solid var(--border-bright);
@@ -99,6 +350,7 @@
       text-decoration: none;
       transition: all 0.2s;
     }
+
     .btn-logout-admin:hover {
       border-color: var(--danger);
       color: var(--danger);
@@ -276,12 +528,16 @@
       font-family: var(--mono);
     }
 
+    .btn-delete-route:active {
+      transform: scale(0.96);
+    }
+
     /* ── Map Info Overlay ── */
     .map-info-overlay {
       position: absolute;
       bottom: 24px;
       left: 16px;
-      background: rgba(13,17,23,0.92);
+      background: rgba(13, 17, 23, 0.92);
       backdrop-filter: blur(8px);
       border: 1px solid var(--border-bright);
       border-radius: var(--radius);
@@ -350,30 +606,33 @@
         height: auto;
         overflow-y: auto;
       }
+
       body {
         overflow-y: auto;
       }
+
       .left-panel {
         height: auto;
         border-right: none;
         border-bottom: 1px solid var(--border);
         overflow-y: visible;
       }
+
       #admin-map {
         height: 60vh;
       }
     }
   </style>
 </head>
+
 <body>
 
   <!-- Top Navigation -->
   <nav class="topbar">
     <div class="topbar-brand">
-      <svg width="22" height="22" viewBox="0 0 24 24"
-           fill="none" stroke="#4285F4" stroke-width="2">
-        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
-        <circle cx="12" cy="10" r="3"/>
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4285F4" stroke-width="2">
+        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
+        <circle cx="12" cy="10" r="3" />
       </svg>
       GPS Route Tracker
       <span class="admin-badge">Super Admin</span>
@@ -382,9 +641,12 @@
       <span class="topbar-user">
         Logged in as <span>{{ request.user.username }}</span>
       </span>
-      <a href="/logout/" class="btn-logout-admin">
-        Sign Out
-      </a>
+      <form method="POST" action="/logout/" style="display:inline;">
+        {% csrf_token %}
+        <button type="submit" class="btn-logout-admin">
+          Sign Out
+        </button>
+      </form>
     </div>
   </nav>
 
@@ -424,56 +686,121 @@
         </div>
         <div class="mini-stat">
           <div class="mini-stat-label">Total Distance</div>
-          <div class="mini-stat-value"
-               style="font-size:13px">
+          <div class="mini-stat-value" style="font-size:13px">
             {{ total_distance }}
           </div>
         </div>
         <div class="mini-stat">
           <div class="mini-stat-label">Today Distance</div>
-          <div class="mini-stat-value"
-               style="font-size:13px">
+          <div class="mini-stat-value" style="font-size:13px">
             {{ today_distance }}
           </div>
         </div>
       </div>
 
-      <!-- Routes List -->
-      <div class="routes-section-title">
-        Tracked Routes ({{ total_routes }})
+      <!-- ── Filter Panel ──────────────────────── -->
+      <div class="filter-panel">
+        <div class="filter-panel-title">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="22,3 2,3 10,12.46 10,19 14,21 14,12.46"/>
+          </svg>
+          Filter & Analytics
+        </div>
+
+        <!-- Date Range -->
+        <div class="filter-row">
+          <div class="filter-group">
+            <label class="filter-label">From</label>
+            <input type="date" id="filter-from" class="filter-input" max="{{ today_str }}">
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">To</label>
+            <input type="date" id="filter-to" class="filter-input" max="{{ today_str }}">
+          </div>
+        </div>
+
+        <!-- Profile Filter -->
+        <div class="filter-group">
+          <label class="filter-label">Profile</label>
+          <div class="filter-chips">
+            <button class="chip active" data-profile="all" onclick="setGraphProfile('all',this)">All</button>
+            <button class="chip" data-profile="walking" onclick="setGraphProfile('walking',this)" style="--chip-color:#34A853">🚶 Walk</button>
+            <button class="chip" data-profile="cycling" onclick="setGraphProfile('cycling',this)" style="--chip-color:#FBBC05">🚴 Cycle</button>
+            <button class="chip" data-profile="motorcycle" onclick="setGraphProfile('motorcycle',this)" style="--chip-color:#FF6D00">🏍️ Moto</button>
+            <button class="chip" data-profile="car" onclick="setGraphProfile('car',this)" style="--chip-color:#4285F4">🚗 Car</button>
+          </div>
+        </div>
+
+        <!-- Metric Selector -->
+        <div class="filter-group">
+          <label class="filter-label">Show</label>
+          <div class="metric-tabs">
+            <button class="metric-tab active" data-metric="distance" onclick="setMetric('distance',this)">Distance (km)</button>
+            <button class="metric-tab" data-metric="routes" onclick="setMetric('routes',this)">Routes</button>
+            <button class="metric-tab" data-metric="duration" onclick="setMetric('duration',this)">Duration (min)</button>
+          </div>
+        </div>
+
+        <!-- Quick Range Buttons -->
+        <div class="filter-group">
+          <label class="filter-label">Quick Range</label>
+          <div class="quick-range">
+            <button class="quick-btn" onclick="setQuickRange(7)">7D</button>
+            <button class="quick-btn active" onclick="setQuickRange(30)">30D</button>
+            <button class="quick-btn" onclick="setQuickRange(60)">60D</button>
+            <button class="quick-btn" onclick="setQuickRange(90)">90D</button>
+          </div>
+        </div>
+
+        <!-- Apply Button -->
+        <button class="btn-apply-filter" onclick="loadGraphData()">Apply Filter</button>
       </div>
 
-      {% for route in route_list %}
-      <div class="route-card"
-           data-route='{{ route|escapejs }}'
-           onclick="handleRouteClick(this)">
-        <div class="route-card-header">
-          <span class="route-date">{{ route.date }}</span>
-          <span class="route-time">{{ route.time }}</span>
+      <!-- ── Summary Stats Strip ─────────────────── -->
+      <div class="graph-summary" id="graph-summary" style="display:none;">
+        <div class="gsumm-item">
+          <span class="gsumm-label">Distance</span>
+          <span class="gsumm-val" id="gs-distance">—</span>
         </div>
-        <div class="route-meta">
-          <span class="route-meta-item">
-            Distance: <strong>{{ route.distance }}</strong>
-          </span>
-          <span class="route-meta-item">
-            Duration: <strong>{{ route.duration }}</strong>
-          </span>
-          <span class="route-meta-item">
-            Points: <strong>{{ route.total_points }}</strong>
-          </span>
+        <div class="gsumm-item">
+          <span class="gsumm-label">Routes</span>
+          <span class="gsumm-val" id="gs-routes">—</span>
         </div>
-        <div style="margin-top:8px;">
-          <span class="stop-badge">
-            Stops: Coming Soon
-          </span>
+        <div class="gsumm-item">
+          <span class="gsumm-label">Duration</span>
+          <span class="gsumm-val" id="gs-duration">—</span>
+        </div>
+        <div class="gsumm-item">
+          <span class="gsumm-label">Active Days</span>
+          <span class="gsumm-val" id="gs-active">—</span>
         </div>
       </div>
-      {% empty %}
-      <div style="text-align:center; padding:40px;
-                  color:var(--text-muted); font-size:13px;">
-        No routes recorded yet.
+
+      <!-- ── Line Graph Canvas ───────────────────── -->
+      <div class="graph-wrapper" id="graph-wrapper">
+        <div class="graph-loading" id="graph-loading">
+          <div class="graph-spinner"></div>
+          Loading graph...
+        </div>
+        <canvas id="route-graph" style="display:none; width:100%; height:200px;"></canvas>
+        <div class="graph-empty" id="graph-empty" style="display:none;">
+          No activity in this date range.
+        </div>
       </div>
-      {% endfor %}
+
+      <!-- Routes List -->
+      <div class="routes-section-title">
+        Tracked Routes
+        (<span id="route-count-display">{{ total_routes }}</span>)
+      </div>
+
+      <div id="route-cards-container">
+        <!-- Cards rendered by JavaScript below -->
+        <div style="text-align:center; padding:30px;
+                    color:var(--text-muted); font-size:13px;">
+          Loading routes...
+        </div>
+      </div>
     </div>
 
     <!-- RIGHT PANEL — Map -->
@@ -485,28 +812,23 @@
         <div class="map-info-title">Route Details</div>
         <div class="map-info-row">
           <span class="map-info-label">Distance</span>
-          <span class="map-info-value"
-                id="ov-distance">—</span>
+          <span class="map-info-value" id="ov-distance">—</span>
         </div>
         <div class="map-info-row">
           <span class="map-info-label">Duration</span>
-          <span class="map-info-value"
-                id="ov-duration">—</span>
+          <span class="map-info-value" id="ov-duration">—</span>
         </div>
         <div class="map-info-row">
           <span class="map-info-label">Date</span>
-          <span class="map-info-value"
-                id="ov-date">—</span>
+          <span class="map-info-value" id="ov-date">—</span>
         </div>
         <div class="map-info-row">
           <span class="map-info-label">Points</span>
-          <span class="map-info-value"
-                id="ov-points">—</span>
+          <span class="map-info-value" id="ov-points">—</span>
         </div>
         <div class="map-info-row">
           <span class="map-info-label">Stops</span>
-          <span class="map-info-value"
-                style="color:var(--text-dim)">
+          <span class="map-info-value" style="color:var(--text-dim)">
             Coming Soon
           </span>
         </div>
@@ -514,15 +836,22 @@
     </div>
   </div>
 
+  <script id="route-data" type="application/json">
+    {{ route_list_json|safe }}
+  </script>
+
   <script>
-    const ROUTE_LIST = {{ route_list_json|safe }};
+    // Parse route data from Django — single source of truth
+    const ROUTE_LIST = JSON.parse(
+      document.getElementById('route-data').textContent
+    );
 
     // ── Global state ──────────────────────────────────────
     let adminMap;
-    let activePolyline  = null;
-    let activeStart     = null;
-    let activeEnd       = null;
-    let activeCard      = null;
+    let activePolyline = null;
+    let activeStart = null;
+    let activeEnd = null;
+    let activeCard = null;
 
     // ── Initialize admin map ──────────────────────────────
     function initAdminMap() {
@@ -533,14 +862,15 @@
           return;
         }
         adminMap = new google.maps.Map(mapDiv, {
-          center:            { lat: 16.7050, lng: 74.2433 },
-          zoom:              13,
-          mapTypeId:         'roadmap',
-          mapId:             'ADMIN_MAP',
-          zoomControl:       true,
-          mapTypeControl:    false,
-          scaleControl:      true,
+          center: { lat: 16.7050, lng: 74.2433 },
+          zoom: 13,
+          mapTypeId: 'roadmap',
+          mapId: 'YOUR_ACTUAL_MAP_ID_HERE',
+          zoomControl: true,
+          mapTypeControl: false,
+          scaleControl: true,
           streetViewControl: false,
+          rotateControl: true,
           fullscreenControl: false,
         });
       }
@@ -552,142 +882,682 @@
     }
     window.initMap = initAdminMap;
 
-    // ── Marker helper ─────────────────────────────────────
-    async function adminPlaceMarker(lat, lon, color, title) {
-      const lat_ = parseFloat(lat);
-      const lon_ = parseFloat(lon);
-      if (isNaN(lat_) || isNaN(lon_)) return null;
+    // ── Marker helper with fallback ───────────────────────
+    function adminPlaceMarker(lat, lon, color, title, glyph) {
+      const parsedLat = parseFloat(lat);
+      const parsedLon = parseFloat(lon);
 
-      // Ensure library is loaded
-      const { AdvancedMarkerElement, PinElement } = await google.maps.importLibrary("marker");
+      if (isNaN(parsedLat) || isNaN(parsedLon)) {
+        console.error('adminPlaceMarker: invalid coords', lat, lon);
+        return null;
+      }
 
-      const pin = new PinElement({
-        background:  color,
-        borderColor: '#ffffff',
-        glyphColor:  '#ffffff',
-        scale:       1.2
-      });
+      if (!adminMap) {
+        console.error('adminPlaceMarker: map not ready');
+        return null;
+      }
 
-      return new AdvancedMarkerElement({
-        position: { lat: lat_, lng: lon_ },
-        map:      adminMap,
-        title:    title,
-        content:  pin.element
-      });
-    }
+      try {
+        // Try AdvancedMarkerElement first (requires mapId)
+        const pin = new google.maps.marker.PinElement({
+          background: color,
+          borderColor: '#ffffff',
+          glyphColor: '#ffffff',
+          scale: 1.4,
+          glyph: glyph || null
+        });
 
-    // A better implementation of the prompt instructions:
-    // It's safer to just attach an index attribute or use the js array
-    window.handleRouteClick = function(el) {
+        const marker = new google.maps.marker.AdvancedMarkerElement({
+          position: { lat: parsedLat, lng: parsedLon },
+          map: adminMap,
+          title: title,
+          content: pin
+        });
+
+        console.log('AdvancedMarker placed:', title, parsedLat, parsedLon);
+        return marker;
+
+      } catch (advancedError) {
+        // Fallback to classic Marker if AdvancedMarker fails
+        console.warn('AdvancedMarkerElement failed, using fallback:', advancedError.message);
+
         try {
-            let routeStr = el.getAttribute('data-route');
-            
-            let routeData;
-            try {
-               // Try exact instructed way
-               routeData = JSON.parse(routeStr);
-            } catch(e) {
-               // The exact instructed way failed because django dumps dicts as python strings, not json strings inside loop.
-               // We will use ROUTE_LIST instead since we passed it down.
-               const routeIndex = Array.from(el.parentNode.children).indexOf(el) - 2; // -2 for back btn and title
-               const nameMatch = routeStr.match(/'date': '([^']+)'/);
-               if (nameMatch) {
-                    routeData = ROUTE_LIST.find(r => r.date === nameMatch[1] && r.time === routeStr.match(/'time': '([^']+)'/)[1]);
-               }
-               if (!routeData) routeData = ROUTE_LIST[Math.max(0, routeIndex)]; // best guess
+          const marker = new google.maps.Marker({
+            position: { lat: parsedLat, lng: parsedLon },
+            map: adminMap,
+            title: title,
+            icon: {
+              path: google.maps.SymbolPath.CIRCLE,
+              scale: 12,
+              fillColor: color,
+              fillOpacity: 1,
+              strokeColor: '#ffffff',
+              strokeWeight: 2.5,
+            },
+            label: {
+              text: glyph || title[0],
+              color: '#ffffff',
+              fontSize: '11px',
+              fontWeight: '700',
             }
-            
-            showRouteOnMap(routeData, el);
-        } catch(e) {
-            console.error("Error parsing route data", e);
+          });
+
+          console.log('Fallback marker placed:', title);
+          return marker;
+
+        } catch (fallbackError) {
+          console.error('Both marker types failed:', fallbackError);
+          return null;
         }
+      }
     }
 
+    function removeAdminMarker(marker) {
+      if (!marker) return null;
+      try {
+        marker.map = null;
+      } catch (e) {
+        try { marker.setMap(null); } catch (e2) { }
+      }
+      return null;
+    }
 
-    // ── Show route on admin map ───────────────────────────
-    async function showRouteOnMap(routeData, cardEl) {
-      if (!routeData) return;
-        
-      // Clear previous route
+    const PROFILE_CONFIG = {
+      walking: { color: '#34A853', label: 'Walking', icon: '🚶', weight: 4 },
+      cycling: { color: '#FBBC05', label: 'Cycling', icon: '🚴', weight: 5 },
+      motorcycle: { color: '#FF6D00', label: 'Motorcycle', icon: '🏍️', weight: 5 },
+      car: { color: '#4285F4', label: 'Car', icon: '🚗', weight: 6 },
+    };
+
+    function getProfileConfig(profile) {
+      return PROFILE_CONFIG[profile] || PROFILE_CONFIG.car;
+    }
+
+    // ── Render route cards from ROUTE_LIST ────────────────
+    function renderRouteCards() {
+      const container = document.getElementById('route-cards-container');
+      const countEl = document.getElementById('route-count-display');
+
+      if (countEl) countEl.textContent = ROUTE_LIST.length;
+      if (!container) return;
+
+      if (ROUTE_LIST.length === 0) {
+        container.innerHTML = `
+          <div style="text-align:center; padding:40px;
+                      color:var(--text-muted); font-size:13px;">
+            No routes recorded yet.
+          </div>`;
+        return;
+      }
+
+      container.innerHTML = '';
+
+      ROUTE_LIST.forEach((route, index) => {
+        const card = document.createElement('div');
+        card.className = 'route-card';
+        card.dataset.index = index;
+
+        const qColor =
+          route.sampling_quality === 'Excellent' ? '#34A853' :
+            route.sampling_quality === 'Good' ? '#4285F4' :
+              route.sampling_quality === 'Fair' ? '#FBBC05' :
+                route.sampling_quality === 'No Data' ? '#7d8590' :
+                  '#EA4335';
+
+        const dataWarning = !route.has_valid_data
+          ? `<div style="margin-top:6px; font-size:11px;
+                         color:#EA4335;">
+               ⚠ Invalid coordinate data
+               (${route.raw_point_count} raw,
+                ${route.valid_points} valid)
+             </div>`
+          : '';
+
+        const cfg = getProfileConfig(route.profile);
+
+        card.innerHTML = `
+          <div class="route-card-header">
+            <span class="route-date">${route.date}</span>
+            <span class="route-time">${route.time}</span>
+          </div>
+
+          <!-- Profile badge -->
+          <div style="margin-bottom:8px;">
+            <span style="
+              display: inline-flex;
+              align-items: center;
+              gap: 4px;
+              font-size: 11px;
+              font-weight: 600;
+              padding: 2px 8px;
+              border-radius: 10px;
+              background: ${cfg.color}18;
+              border: 1px solid ${cfg.color}50;
+              color: ${cfg.color};
+              font-family: var(--mono);
+            ">
+              ${cfg.icon} ${cfg.label}
+            </span>
+          </div>
+
+          <div class="route-meta">
+            <span class="route-meta-item">
+              Distance: <strong>${route.distance}</strong>
+            </span>
+            <span class="route-meta-item">
+              Duration: <strong>${route.duration}</strong>
+            </span>
+            <span class="route-meta-item">
+              Points: <strong>${route.valid_points}</strong>
+              <span style="color:var(--text-muted);
+                           font-size:10px;">
+                /${route.raw_point_count} raw
+              </span>
+            </span>
+          </div>
+            </span>
+          </div>
+          <div style="margin-top:6px; display:flex;
+                      gap:6px; align-items:center;
+                      flex-wrap:wrap;">
+            <span class="stop-badge">
+              Stops: Coming Soon
+            </span>
+            <span style="font-size:10px; padding:2px 7px;
+                         border-radius:10px; font-weight:600;
+                         background:${qColor}20;
+                         color:${qColor};
+                         border:1px solid ${qColor}40;">
+              ${route.sampling_quality}
+            </span>
+          </div>
+          ${dataWarning}
+          <div style="margin-top:10px; display:flex;
+                      gap:8px; align-items:center;">
+            <button
+              class="btn-view-route"
+              style="flex:1;"
+              onclick="handleRouteView(${index}); event.stopPropagation();">
+              View on Map
+            </button>
+            <button
+              class="btn-delete-route"
+              onclick="handleRouteDelete(${route.id}, ${index}, this); event.stopPropagation();"
+              title="Permanently delete this route"
+              style="
+                background: transparent;
+                border: 1px solid rgba(234,67,53,0.3);
+                color: #EA4335;
+                border-radius: 8px;
+                padding: 8px 12px;
+                font-size: 12px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.2s;
+                display: flex;
+                align-items: center;
+                gap: 5px;
+                font-family: var(--font);
+              "
+              onmouseover="
+                this.style.background='rgba(234,67,53,0.12)';
+                this.style.borderColor='#EA4335';
+              "
+              onmouseout="
+                this.style.background='transparent';
+                this.style.borderColor='rgba(234,67,53,0.3)';
+              "
+            >
+              <svg width="13" height="13"
+                   viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2">
+                <polyline points="3,6 5,6 21,6"/>
+                <path d="M19,6l-1,14a2 2 0 01-2 2H8
+                         a2 2 0 01-2-2L5,6"/>
+                <path d="M10,11v6M14,11v6"/>
+                <path d="M9,6V4a1 1 0 011-1h4
+                         a1 1 0 011 1v2"/>
+              </svg>
+              Delete
+            </button>
+          </div>
+        `;
+
+        if (route.has_valid_data) {
+          card.style.cursor = 'pointer';
+          card.addEventListener('click', () => {
+            showRouteOnMap(ROUTE_LIST[index], card);
+          });
+        } else {
+          card.style.cursor = 'not-allowed';
+          card.style.opacity = '0.6';
+          card.title = 'No valid GPS data for this route';
+        }
+
+        container.appendChild(card);
+      });
+
+      // Reset map state on re-render
+      activeStart = removeAdminMarker(activeStart);
+      activeEnd = removeAdminMarker(activeEnd);
       if (activePolyline) {
         activePolyline.setMap(null);
         activePolyline = null;
       }
-      if (activeStart) { activeStart.map = null; activeStart = null; }
-      if (activeEnd)   { activeEnd.map = null;   activeEnd   = null; }
+      activeCard = null;
+      const overlay = document.getElementById('map-overlay');
+      if (overlay) overlay.classList.remove('visible');
+    }
 
-      // Highlight active card
-      if (activeCard) activeCard.classList.remove('active');
-      if (cardEl) {
-        cardEl.classList.add('active');
-        activeCard = cardEl;
-      }
-
-      // Parse route points
-      const rawPoints = routeData.points || [];
-      const path = [];
-      rawPoints.forEach(p => {
-        const lat = parseFloat(p.lat ?? p[0]);
-        const lon = parseFloat(p.lon ?? p.lng ?? p[1]);
-        if (!isNaN(lat) && !isNaN(lon)) {
-          path.push({ lat, lng: lon });
-        }
-      });
-
-      if (path.length < 2) {
-        alert('Not enough valid points to display.');
+    // ── Show route on admin map ───────────────────────────
+    async function showRouteOnMap(routeData, cardEl) {
+      // Guard — ensure map is initialized
+      if (!adminMap) {
+        console.error('Admin map not ready yet. Please wait for map to load.');
+        alert('Map is still loading. Please try again.');
         return;
       }
 
-      // Draw route polyline
-      activePolyline = new google.maps.Polyline({
-        path:          path,
-        geodesic:      true,
-        strokeColor:   '#4285F4',
-        strokeOpacity: 0.9,
-        strokeWeight:  5,
-        map:           adminMap,
-        zIndex:        10
+      if (!routeData) return;
+
+      // Force clear ALL markers and polyline
+      // before drawing new route
+      activeStart = removeAdminMarker(activeStart);
+      activeEnd = removeAdminMarker(activeEnd);
+
+      if (activePolyline) {
+        activePolyline.setMap(null);
+        activePolyline = null;
+      }
+
+      // Highlight active card
+      document.querySelectorAll('.route-card')
+        .forEach(c => c.classList.remove('active'));
+      if (cardEl) {
+        cardEl.classList.add('active');
+      }
+      activeCard = cardEl;
+
+      console.log(
+        'showRouteOnMap called:',
+        'route id:', routeData.id,
+        'valid_points:', routeData.valid_points,
+        'has_valid_data:', routeData.has_valid_data
+      );
+
+      const rawPoints = routeData.points || [];
+
+      console.log(
+        'Points to render:', rawPoints.length,
+        'Sample:', rawPoints[0] || 'none'
+      );
+
+      // Build Google Maps path from pre-normalized points
+      const path = [];
+      rawPoints.forEach((p, i) => {
+        let lat, lon;
+
+        if (typeof p === 'object' && p !== null) {
+          if (p.lat !== undefined) {
+            lat = parseFloat(p.lat);
+            lon = parseFloat(
+              p.lon !== undefined ? p.lon :
+                p.lng !== undefined ? p.lng :
+                  p.longitude !== undefined ? p.longitude : NaN
+            );
+          } else if (p.latitude !== undefined) {
+            lat = parseFloat(p.latitude);
+            lon = parseFloat(p.longitude);
+          }
+        } else if (Array.isArray(p)) {
+          lat = parseFloat(p[0]);
+          lon = parseFloat(p[1]);
+        }
+
+        if (!isNaN(lat) && !isNaN(lon) &&
+          lat >= -90 && lat <= 90 &&
+          lon >= -180 && lon <= 180) {
+          path.push({ lat, lng: lon });
+        } else {
+          console.warn(`Point ${i} invalid:`, p, '→ lat:', lat, 'lon:', lon);
+        }
       });
 
-      // Start marker — RED
-      activeStart = await adminPlaceMarker(
-        path[0].lat, path[0].lng, '#EA4335', 'Start'
+      console.log('Valid path points:', path.length, '/', rawPoints.length);
+
+      if (path.length < 2) {
+        console.error(
+          'Not enough valid path points.',
+          'Raw points:', rawPoints.length,
+          'Valid path:', path.length,
+          'First 3 raw:', rawPoints.slice(0, 3)
+        );
+        alert(
+          `Cannot display route.\n` +
+          `Route has ${rawPoints.length} raw points ` +
+          `but ${path.length} valid map points.\n` +
+          `Check browser console for details.`
+        );
+        return;
+      }
+
+      // Get profile color for this route
+      const profileCfg = getProfileConfig(routeData.profile);
+
+      // Draw profile-colored polyline
+      activePolyline = new google.maps.Polyline({
+        path: path,
+        geodesic: true,
+        strokeColor: profileCfg.color,
+        strokeOpacity: 0.9,
+        strokeWeight: profileCfg.weight,
+        map: adminMap,
+        zIndex: 10
+      });
+
+      // Start marker — RED with S glyph
+      activeStart = adminPlaceMarker(
+        path[0].lat, path[0].lng, '#EA4335', 'Start Point', 'S'
       );
 
-      // End marker — GREEN
+      // End marker — GREEN with E glyph
       const last = path[path.length - 1];
-      activeEnd = await adminPlaceMarker(
-        last.lat, last.lng, '#34A853', 'End'
+      activeEnd = adminPlaceMarker(
+        last.lat, last.lng, '#34A853', 'End Point', 'E'
       );
 
-      // Fit map to route
+      // Fit map to route bounds
       try {
         const bounds = new google.maps.LatLngBounds();
         path.forEach(p => bounds.extend(p));
         if (!bounds.isEmpty()) {
           adminMap.fitBounds(bounds, { padding: 60 });
         }
-      } catch(e) {
+      } catch (e) {
         adminMap.setCenter(path[0]);
         adminMap.setZoom(15);
       }
 
-      // Show info overlay
+      // Show route info overlay
       const overlay = document.getElementById('map-overlay');
       if (overlay) {
-        document.getElementById('ov-distance').textContent =
-          routeData.distance || '—';
-        document.getElementById('ov-duration').textContent =
-          routeData.duration || '—';
-        document.getElementById('ov-date').textContent =
-          routeData.created_at || '—';
-        document.getElementById('ov-points').textContent =
-          routeData.total_points || '—';
+        document.getElementById('ov-distance').textContent = routeData.distance || '—';
+        document.getElementById('ov-duration').textContent = routeData.duration || '—';
+        document.getElementById('ov-date').textContent = routeData.created_at || '—';
+        document.getElementById('ov-points').textContent = `${routeData.valid_points} / ${routeData.raw_point_count}`;
         overlay.classList.add('visible');
       }
     }
+
+    function handleRouteView(index) {
+      const route = ROUTE_LIST[index];
+      if (!route) return;
+      const card = document.querySelector(`[data-index="${index}"]`);
+      showRouteOnMap(route, card);
+    }
+
+    function getCsrfToken() {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.startsWith('csrftoken=')) {
+          return decodeURIComponent(cookie.substring('csrftoken='.length));
+        }
+      }
+      return '';
+    }
+
+    async function handleRouteDelete(routeId, index, btnEl) {
+      const route = ROUTE_LIST[index];
+      if (!route) return;
+
+      const confirmed = confirm(
+        `Delete this route permanently?\n\n` +
+        `Date:     ${route.created_at}\n` +
+        `Distance: ${route.distance}\n` +
+        `Points:   ${route.valid_points}\n\n` +
+        `This will permanently remove the route\n` +
+        `from the database. Cannot be undone.`
+      );
+
+      if (!confirmed) return;
+
+      if (btnEl) {
+        btnEl.disabled = true;
+        btnEl.textContent = 'Deleting...';
+        btnEl.style.opacity = '0.5';
+      }
+
+      try {
+        const res = await fetch(`/superadmin/delete/route/${routeId}/`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+          }
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          const card = document.querySelector(`[data-index="${index}"]`);
+          if (card) {
+            card.style.transition = 'all 0.3s ease';
+            card.style.opacity = '0';
+            card.style.transform = 'translateX(-10px)';
+            setTimeout(() => {
+              card.style.height = card.offsetHeight + 'px';
+              card.style.overflow = 'hidden';
+              card.style.height = '0';
+              card.style.padding = '0';
+              card.style.margin = '0';
+            }, 300);
+            setTimeout(() => card.remove(), 600);
+          }
+
+          if (activePolyline && activeCard && activeCard.dataset.index === String(index)) {
+            activePolyline.setMap(null);
+            activePolyline = null;
+            activeStart = removeAdminMarker(activeStart);
+            activeEnd = removeAdminMarker(activeEnd);
+            const overlay = document.getElementById('map-overlay');
+            if (overlay) overlay.classList.remove('visible');
+          }
+
+          ROUTE_LIST.splice(index, 1);
+          const countEl = document.getElementById('route-count-display');
+          if (countEl) countEl.textContent = ROUTE_LIST.length;
+          renderRouteCards();
+          console.log(`Route ${routeId} deleted.`, data.message);
+        } else {
+          const err = await res.json().catch(() => ({}));
+          alert('Delete failed: ' + (err.error || 'Unknown error'));
+          if (btnEl) {
+            btnEl.disabled = false;
+            btnEl.style.opacity = '1';
+          }
+        }
+      } catch (e) {
+        console.error('Admin delete error:', e);
+        alert('Network error. Please try again.');
+        if (btnEl) {
+          btnEl.disabled = false;
+          btnEl.style.opacity = '1';
+        }
+      }
+    }
+
+    // ── Graph State ───────────────────────────────
+    const USER_ID      = "{{ target_user.id }}";
+    let   graphChart   = null;
+    let   activeMetric  = 'distance';
+    let   activeProfile = 'all';
+
+    // ── Filter Helper Functions ───────────────────
+    function setGraphProfile(profile, btn) {
+      activeProfile = profile;
+      document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+    }
+
+    function setMetric(metric, btn) {
+      activeMetric = metric;
+      document.querySelectorAll('.metric-tab').forEach(t => t.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+    }
+
+    function setQuickRange(days) {
+      const today = new Date();
+      const from  = new Date();
+      from.setDate(today.getDate() - (days - 1));
+      document.getElementById('filter-to').value = today.toISOString().split('T')[0];
+      document.getElementById('filter-from').value = from.toISOString().split('T')[0];
+      document.querySelectorAll('.quick-btn').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+    }
+
+    // ── Metric Label Helper ───────────────────────
+    function getMetricLabel(metric) {
+      const labels = {
+        distance: 'Distance (km)',
+        routes:   'Routes',
+        duration: 'Duration (min)',
+        points:   'GPS Points',
+      };
+      return labels[metric] || metric;
+    }
+
+    function getMetricColor(profile) {
+      const colors = {
+        walking:    '#34A853',
+        cycling:    '#FBBC05',
+        motorcycle: '#FF6D00',
+        car:        '#4285F4',
+        all:        '#4285F4',
+      };
+      return colors[profile] || '#4285F4';
+    }
+
+    // ── Main Graph Load Function ──────────────────
+    async function loadGraphData() {
+      const fromEl = document.getElementById('filter-from');
+      const toEl = document.getElementById('filter-to');
+      const params = new URLSearchParams({ metric: activeMetric, profile: activeProfile });
+      if (fromEl.value) params.append('from', fromEl.value);
+      if (toEl.value)   params.append('to',   toEl.value);
+
+      document.getElementById('graph-loading').style.display = 'flex';
+      document.getElementById('route-graph').style.display = 'none';
+      document.getElementById('graph-empty').style.display = 'none';
+      document.getElementById('graph-summary').style.display = 'none';
+
+      try {
+        const res = await fetch(`/superadmin/api/user/${USER_ID}/graph/?${params.toString()}`);
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          console.error('Graph API error:', err);
+          document.getElementById('graph-loading').style.display = 'none';
+          document.getElementById('graph-empty').style.display = 'block';
+          document.getElementById('graph-empty').textContent = err.error || 'Failed to load data.';
+          return;
+        }
+
+        const data = await res.json();
+        document.getElementById('graph-loading').style.display = 'none';
+        const hasData = data.values.some(v => v > 0);
+
+        if (!hasData) {
+          document.getElementById('graph-empty').style.display = 'block';
+          return;
+        }
+
+        const canvas = document.getElementById('route-graph');
+        canvas.style.display = 'block';
+        const color = getMetricColor(activeProfile);
+        const label = getMetricLabel(activeMetric);
+
+        if (graphChart) {
+          graphChart.destroy();
+          graphChart = null;
+        }
+
+        graphChart = new Chart(canvas, {
+          type: 'line',
+          data: {
+            labels: data.labels,
+            datasets: [{
+              label: label,
+              data: data.values,
+              borderColor: color,
+              backgroundColor: color + '20',
+              borderWidth: 2,
+              pointRadius: data.labels.length > 30 ? 0 : 3,
+              pointHoverRadius: 5,
+              pointBackgroundColor: color,
+              pointBorderColor: '#ffffff',
+              pointBorderWidth: 1.5,
+              fill: true,
+              tension: 0.3,
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: 'rgba(13,17,23,0.95)',
+                borderColor: color,
+                borderWidth: 1,
+                titleColor: '#e6edf3',
+                bodyColor: '#9aa0b4',
+                padding: 10,
+                callbacks: { label: ctx => `${label}: ${ctx.parsed.y}` }
+              },
+            },
+            scales: {
+              x: {
+                grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false },
+                ticks: { color: '#7d8590', font: { size: 10 }, maxRotation: 45, maxTicksLimit: data.labels.length > 30 ? 10 : 15 }
+              },
+              y: {
+                beginAtZero: true,
+                grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false },
+                ticks: { color: '#7d8590', font: { size: 10 }, padding: 8 }
+              }
+            }
+          }
+        });
+
+        const s = data.summary;
+        document.getElementById('graph-summary').style.display = 'grid';
+        document.getElementById('gs-distance').textContent = s.total_distance;
+        document.getElementById('gs-routes').textContent = s.total_routes;
+        document.getElementById('gs-duration').textContent = s.total_duration;
+        document.getElementById('gs-active').textContent = s.active_days + ' / ' + s.total_days + 'd';
+
+      } catch(e) {
+        console.error('loadGraphData error:', e);
+        document.getElementById('graph-loading').style.display = 'none';
+        document.getElementById('graph-empty').style.display = 'block';
+        document.getElementById('graph-empty').textContent = 'Network error loading graph.';
+      }
+    }
+
+    // ── Call renderRouteCards on DOMContentLoaded ─────────
+    document.addEventListener('DOMContentLoaded', () => {
+      renderRouteCards();
+
+      const today = new Date();
+      const from  = new Date();
+      from.setDate(today.getDate() - 29);
+      document.getElementById('filter-to').value = today.toISOString().split('T')[0];
+      document.getElementById('filter-from').value = from.toISOString().split('T')[0];
+      loadGraphData();
+    });
   </script>
-  <script src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_API_KEY }}&callback=initMap&loading=async" async defer></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_API_KEY }}&callback=initMap&loading=async"
+    async defer></script>
 </body>
+
 </html>

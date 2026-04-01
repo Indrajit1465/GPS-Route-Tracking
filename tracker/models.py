@@ -15,6 +15,17 @@ class RouteLog(models.Model):
     route_points = models.JSONField(default=list)
     total_points = models.IntegerField(default=0)
 
+    profile      = models.CharField(
+                       max_length=20,
+                       default='car',
+                       choices=[
+                           ('walking',    'Walking'),
+                           ('cycling',    'Cycling'),
+                           ('motorcycle', 'Motorcycle'),
+                           ('car',        'Car'),
+                       ]
+                   )
+
     class Meta:
         ordering = ['-created_at']
 

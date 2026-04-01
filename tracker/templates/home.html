@@ -4,12 +4,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPS Route Tracker</title>
+    <meta name="description"
+        content="Real-time GPS route tracking with road snapping, offline support, and route history.">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
         href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Fira+Sans:wght@400;600;700&display=swap"
         rel="stylesheet">
+    {% load static %}
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+    <meta name="theme-color" content="#4285F4">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Route Tracker">
 
     <style>
         :root {
@@ -240,6 +250,49 @@
             background: rgba(66, 133, 244, 0.1);
         }
 
+        .profile-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .profile-note {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 6px;
+            font-style: italic;
+        }
+
+        .delete-route-btn:active {
+            transform: scale(0.96);
+        }
+
+        .profile-options {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+
+        .profile-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            flex: 1;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .profile-btn.active {
+            border-color: var(--primary);
+            background: rgba(66, 133, 244, 0.1);
+        }
+
         /* ── Map ── */
         .map-wrapper {
             border-radius: 16px;
@@ -247,6 +300,12 @@
             border: 1px solid var(--border);
             box-shadow: var(--shadow);
             margin-bottom: 16px;
+            position: relative;
+        }
+
+        #compass-btn:hover {
+            border-color: rgba(255, 255, 255, 0.4) !important;
+            transform: scale(1.05);
         }
 
         #map {
@@ -480,6 +539,12 @@
             }
         }
 
+        @media (min-width: 768px) {
+            .stats-bar {
+                grid-template-columns: repeat(5, 1fr);
+            }
+        }
+
         @media (min-width: 1200px) {
             #map {
                 height: 78vh;
@@ -562,8 +627,6 @@
         let endMarker = null;
         let movingMarker = null;
         let routePoints = [];
-        let smoothedBuffer = [];
-        let snapBatchBuffer = [];
         let totalDistanceMeters = 0;
         let lastPoint = null;
         let isTracking = false;
@@ -572,15 +635,472 @@
         let durationInterval = null;
         let _activeAnimation = null;
         let historyPage = 1;
+        let isOnline = navigator.onLine;
+        let consecutiveFailures = 0;
 
-        let anchorPoints    = [];  // Road-snapped anchors
-        let lastAnchor      = null;
-        let roadPathBuffer  = [];  // Accumulated road geometry
-        const ANCHOR_DIST_M = 25;  // Get road path every 25m
+        // Compass & rotation state
+        let compassEnabled = false;
+        let currentHeading = 0;
+        let deviceOrientHandler = null;
+
+        // Snap trigger distance — fires road path API
+        // when user moves this far from last anchor
+        const ANCHOR_DIST_M = 30;
+
+        // Queue of routePoints indices awaiting snap
+        let snapQueue = [];
+        let snapRunning = false;
+
+        // Profile Configuration
+        const PROFILES = {
+            walking: {
+                minAccuracy: 25,
+                distFilter: 2,
+                color: '#34A853',
+                minSpeed: 0,
+                maxSpeed: 2.5
+            },
+            cycling: {
+                minAccuracy: 35,
+                distFilter: 5,
+                color: '#FBBC05',
+                minSpeed: 2.5,
+                maxSpeed: 8
+            },
+            motorcycle: {
+                minAccuracy: 40,
+                distFilter: 10,
+                color: '#EA4335',
+                minSpeed: 8,
+                maxSpeed: 15
+            },
+            car: {
+                minAccuracy: 50,
+                distFilter: 15,
+                color: '#4285F4',
+                minSpeed: 15,
+                maxSpeed: Infinity
+            }
+        };
+
+        let currentProfile = 'walking';
+        let profileLocked = false;
+        let roadPathAccumulator = [];
+        let wakeLock = null;
+        let wakeLockActive = false;
+
+        function detectProfileFromSpeed(speedMs) {
+            if (profileLocked) return;
+            if (speedMs === null || isNaN(speedMs)) return;
+
+            let detected = 'walking';
+            for (const [prof, limits] of Object.entries(PROFILES)) {
+                if (speedMs >= limits.minSpeed && speedMs < limits.maxSpeed) {
+                    detected = prof;
+                    break;
+                }
+            }
+            if (currentProfile !== detected) {
+                currentProfile = detected;
+                applyProfile();
+                const badge = document.getElementById('auto-profile-badge');
+                if (badge) {
+                    badge.textContent = `Auto: ${detected}`;
+                    badge.style.background = 'rgba(52,168,83,0.15)';
+                    badge.style.color = 'var(--success)';
+                }
+            }
+        }
+
+        function applyProfile() {
+            document.querySelectorAll('.profile-btn').forEach(btn => {
+                if (btn.dataset.profile === currentProfile) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            if (livePolyline) {
+                livePolyline.setOptions({ strokeColor: PROFILES[currentProfile].color });
+            }
+            if (snappedPolyline) {
+                snappedPolyline.setOptions({ strokeColor: PROFILES[currentProfile].color });
+            }
+        }
+
+        function setProfile(prof, btn) {
+            profileLocked = true;
+            currentProfile = prof;
+            applyProfile();
+            const badge = document.getElementById('auto-profile-badge');
+            if (badge) {
+                badge.textContent = 'Manual override';
+                badge.style.background = 'rgba(251,188,5,0.15)';
+                badge.style.color = 'var(--warning)';
+            }
+        }
 
         // ══════════════════════════════════════════════
         // PART 2 — Utility / Helper Functions
         // ══════════════════════════════════════════════
+
+        async function requestWakeLock() {
+            if (!('wakeLock' in navigator)) {
+                console.warn('Screen Wake Lock API not supported on this browser. Screen may sleep during tracking.');
+                return;
+            }
+            try {
+                wakeLock = await navigator.wakeLock.request('screen');
+                wakeLockActive = true;
+                console.log('Screen Wake Lock acquired');
+                updateWakeLockIndicator(true);
+                wakeLock.addEventListener('release', () => {
+                    wakeLockActive = false;
+                    console.log('Wake Lock released by system');
+                    updateWakeLockIndicator(false);
+                    if (isTracking) {
+                        setTimeout(requestWakeLock, 1000);
+                    }
+                });
+            } catch (err) {
+                console.warn('Wake Lock request failed:', err);
+            }
+        }
+
+        function releaseWakeLock() {
+            if (wakeLock && wakeLockActive) {
+                wakeLock.release();
+                wakeLock = null;
+                wakeLockActive = false;
+                updateWakeLockIndicator(false);
+                console.log('Wake Lock released');
+            }
+        }
+
+        function updateWakeLockIndicator(active) {
+            const indicator = document.getElementById('wake-lock-indicator');
+            if (!indicator) return;
+            if (active) {
+                indicator.textContent = '☀ Screen On';
+                indicator.style.color = '#34A853';
+                indicator.style.borderColor = '#34A853';
+            } else {
+                indicator.textContent = '💤 Screen may sleep';
+                indicator.style.color = '#FBBC05';
+                indicator.style.borderColor = '#FBBC05';
+            }
+        }
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible' && isTracking && !wakeLockActive) {
+                requestWakeLock();
+            }
+        });
+
+        function showTrackingGuidance() {
+            let guidance = document.getElementById('tracking-guidance');
+            if (!guidance) {
+                guidance = document.createElement('div');
+                guidance.id = 'tracking-guidance';
+                guidance.style.cssText = `
+                    position: fixed;
+                    bottom: 20px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background: rgba(13,17,23,0.95);
+                    border: 1px solid rgba(66,133,244,0.4);
+                    border-radius: 12px;
+                    padding: 12px 20px;
+                    font-size: 12px;
+                    color: #9aa0b4;
+                    z-index: 999;
+                    max-width: 320px;
+                    text-align: center;
+                    line-height: 1.6;
+                    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+                `;
+                document.body.appendChild(guidance);
+            }
+
+            guidance.innerHTML = `
+                <strong style="color:#4285F4;">☀ Keep this screen open</strong><br>
+                For best tracking: keep the app visible.<br>
+                <span style="color:#FBBC05;">Tip: Reduce brightness to save battery.</span><br>
+                <button onclick="document.getElementById('tracking-guidance').remove()"
+                    style="margin-top:8px; background:transparent; border:1px solid rgba(255,255,255,0.2);
+                    color:#9aa0b4; border-radius:6px; padding:3px 10px; font-size:11px; cursor:pointer;">
+                    Got it
+                </button>
+            `;
+
+            setTimeout(() => {
+                if (guidance && guidance.parentNode) {
+                    guidance.style.opacity = '0';
+                    guidance.style.transition = 'opacity 0.5s';
+                    setTimeout(() => guidance.remove(), 500);
+                }
+            }, 8000);
+        }
+
+        function extractLatLon(point) {
+            if (!point) return null;
+            const lat = parseFloat(point.lat ?? point.latitude ?? point[0]);
+            const lon = parseFloat(point.lon ?? point.lng ?? point.longitude ?? point[1]);
+            if (isNaN(lat) || isNaN(lon)) return null;
+            if (lat < -90 || lat > 90) return null;
+            if (lon < -180 || lon > 180) return null;
+            return { lat, lon };
+        }
+
+        async function checkRealConnectivity() {
+            return new Promise((resolve) => {
+                let settled = false;
+
+                const timer = setTimeout(() => {
+                    if (!settled) {
+                        settled = true;
+                        consecutiveFailures++;
+                        console.warn('Connectivity check timeout. Failures:', consecutiveFailures);
+                        resolve(consecutiveFailures < 2);
+                    }
+                }, 6000);
+
+                fetch('/ping/', {
+                    method: 'HEAD',
+                    cache: 'no-store',
+                    headers: { 'X-Connectivity-Check': '1' }
+                })
+                    .then(res => {
+                        if (!settled) {
+                            settled = true;
+                            clearTimeout(timer);
+                            const online = res.status < 500;
+                            if (online) consecutiveFailures = 0;
+                            resolve(online);
+                        }
+                    })
+                    .catch(() => {
+                        if (!settled) {
+                            settled = true;
+                            clearTimeout(timer);
+                            consecutiveFailures++;
+                            resolve(consecutiveFailures < 2);
+                        }
+                    });
+            });
+        }
+
+        function showNetworkBanner(status) {
+            const dot = document.getElementById('network-status-dot');
+            if (status === 'offline') {
+                if (dot) {
+                    dot.style.background = '#EA4335';
+                    dot.style.boxShadow = '0 0 6px #EA4335';
+                    dot.title = 'Offline';
+                }
+            } else {
+                if (dot) {
+                    dot.style.background = '#34A853';
+                    dot.style.boxShadow = '0 0 6px #34A853';
+                    dot.title = 'Online';
+                }
+            }
+
+            let banner = document.getElementById('network-banner');
+            if (!banner) {
+                banner = document.createElement('div');
+                banner.id = 'network-banner';
+                banner.style.cssText = `
+                    position: fixed;
+                    top: 68px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    padding: 8px 20px;
+                    border-radius: 20px;
+                    font-size: 13px;
+                    font-weight: 600;
+                    z-index: 9999;
+                    opacity: 0;
+                    transition: opacity 0.4s ease;
+                    font-family: var(--font-body);
+                    pointer-events: none;
+                    white-space: nowrap;
+                    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+                `;
+                document.body.appendChild(banner);
+            }
+
+            if (status === 'offline') {
+                banner.style.background = '#EA4335';
+                banner.style.color = 'white';
+                banner.textContent = '⚠ Offline — route saving locally';
+                banner.style.opacity = '1';
+            } else if (status === 'online') {
+                banner.style.background = '#34A853';
+                banner.style.color = 'white';
+                banner.textContent = '✓ Online — syncing saved routes';
+                banner.style.opacity = '1';
+                clearTimeout(banner._hideTimer);
+                banner._hideTimer = setTimeout(() => {
+                    banner.style.opacity = '0';
+                }, 4000);
+            }
+        }
+
+        async function updateNetworkStatus() {
+            if (!navigator.onLine) {
+                if (isOnline) {
+                    isOnline = false;
+                    consecutiveFailures = 2;
+                    showNetworkBanner('offline');
+                    console.log('Airplane mode / No network detected');
+                }
+                return;
+            }
+
+            const confirmed = await checkRealConnectivity();
+            const wasOnline = isOnline;
+
+            if (confirmed && !wasOnline) {
+                isOnline = true;
+                consecutiveFailures = 0;
+                showNetworkBanner('online');
+                console.log('Network confirmed — back online');
+                setTimeout(() => { if (typeof syncOfflineRoutes === 'function') syncOfflineRoutes(); }, 1500);
+            } else if (!confirmed && wasOnline) {
+                if (consecutiveFailures >= 2) {
+                    isOnline = false;
+                    showNetworkBanner('offline');
+                    console.warn('Network unreachable after 2 checks');
+                } else {
+                    console.warn('Single connectivity check failed — not marking offline yet. Failures:', consecutiveFailures);
+                }
+            } else if (confirmed && wasOnline) {
+                consecutiveFailures = 0;
+            }
+        }
+
+        setInterval(updateNetworkStatus, 45000);
+        setTimeout(updateNetworkStatus, 5000);
+
+        window.addEventListener('offline', () => {
+            isOnline = false;
+            consecutiveFailures = 2;
+            showNetworkBanner('offline');
+            console.log('Network disconnected — offline mode');
+        });
+
+        window.addEventListener('online', () => {
+            console.log('Network event: online — verifying...');
+            consecutiveFailures = 0;
+            setTimeout(async () => {
+                const confirmed = await checkRealConnectivity();
+                if (confirmed) {
+                    isOnline = true;
+                    showNetworkBanner('online');
+                    setTimeout(() => { if (typeof syncOfflineRoutes === 'function') syncOfflineRoutes(); }, 1000);
+                }
+            }, 2000);
+        });
+
+        // ── Compass & Map Rotation ────────────────────────
+        function toggleCompass() {
+            if (compassEnabled) {
+                disableCompass();
+            } else {
+                requestCompassPermission();
+            }
+        }
+
+        async function requestCompassPermission() {
+            if (typeof DeviceOrientationEvent !== 'undefined' &&
+                typeof DeviceOrientationEvent.requestPermission === 'function') {
+                try {
+                    const permission = await DeviceOrientationEvent.requestPermission();
+                    if (permission === 'granted') {
+                        enableCompass();
+                    } else {
+                        alert('Compass permission denied.\nPlease allow motion access in Safari Settings.');
+                    }
+                } catch (e) {
+                    console.error('Compass permission error:', e);
+                }
+            } else {
+                enableCompass();
+            }
+        }
+
+        function enableCompass() {
+            compassEnabled = true;
+            const btn = document.getElementById('compass-btn');
+            if (btn) {
+                btn.style.borderColor = '#4285F4';
+                btn.style.background = 'rgba(66,133,244,0.15)';
+                btn.title = 'Compass ON — tap to reset North';
+            }
+
+            deviceOrientHandler = function (event) {
+                let heading = null;
+                if (event.webkitCompassHeading !== undefined) {
+                    heading = event.webkitCompassHeading;
+                } else if (event.alpha !== null) {
+                    heading = 360 - event.alpha;
+                    const orient = window.screen.orientation
+                        ? window.screen.orientation.angle : 0;
+                    heading = (heading + orient) % 360;
+                }
+                if (heading === null) return;
+                currentHeading = heading;
+
+                const svg = document.getElementById('compass-svg');
+                if (svg) svg.style.transform = `rotate(${-heading}deg)`;
+                if (map) map.setHeading(heading);
+            };
+
+            window.addEventListener('deviceorientation', deviceOrientHandler, true);
+            console.log('Compass enabled');
+        }
+
+        function disableCompass() {
+            compassEnabled = false;
+            if (deviceOrientHandler) {
+                window.removeEventListener('deviceorientation', deviceOrientHandler, true);
+                deviceOrientHandler = null;
+            }
+            if (map) map.setHeading(0);
+
+            const svg = document.getElementById('compass-svg');
+            if (svg) svg.style.transform = 'rotate(0deg)';
+
+            const btn = document.getElementById('compass-btn');
+            if (btn) {
+                btn.style.borderColor = 'rgba(255,255,255,0.15)';
+                btn.style.background = 'rgba(13,17,23,0.90)';
+                btn.title = 'Toggle map rotation';
+            }
+            console.log('Compass disabled — map reset to North');
+        }
+
+        function updateMapHeadingFromTravel(fromPoint, toPoint) {
+            if (!map || !isTracking || compassEnabled) return;
+            if (!fromPoint || !toPoint) return;
+
+            const dLon = (toPoint.lon - fromPoint.lon) * Math.PI / 180;
+            const lat1 = fromPoint.lat * Math.PI / 180;
+            const lat2 = toPoint.lat * Math.PI / 180;
+            const y = Math.sin(dLon) * Math.cos(lat2);
+            const x = Math.cos(lat1) * Math.sin(lat2) -
+                Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+            let heading = Math.atan2(y, x) * 180 / Math.PI;
+            heading = (heading + 360) % 360;
+
+            if (!isNaN(heading)) {
+                map.setHeading(heading);
+                const svg = document.getElementById('compass-svg');
+                if (svg) svg.style.transform = `rotate(${-heading}deg)`;
+            }
+        }
+
 
         // Django official CSRF cookie reader
         function getCookie(name) {
@@ -785,12 +1305,14 @@
                 center: { lat: 16.7050, lng: 74.2433 },
                 zoom: 15,
                 mapTypeId: 'roadmap',
-                mapId: 'GPS_ROUTE_TRACKER_MAP',
+                mapId: 'YOUR_ACTUAL_MAIN_MAP_ID_HERE',
+                rotateControl: true,
+                heading: 0,
+                tilt: 0,
                 zoomControl: true,
                 mapTypeControl: false,
                 scaleControl: true,
                 streetViewControl: false,
-                rotateControl: false,
                 fullscreenControl: true
             }
             );
@@ -843,14 +1365,14 @@
         }
 
         function haversineJS(lat1, lon1, lat2, lon2) {
-            const R    = 6371000;
+            const R = 6371000;
             const dLat = (lat2 - lat1) * Math.PI / 180;
             const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a    = Math.sin(dLat/2)**2 +
-                         Math.cos(lat1 * Math.PI/180) *
-                         Math.cos(lat2 * Math.PI/180) *
-                         Math.sin(dLon/2)**2;
-            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            const a = Math.sin(dLat / 2) ** 2 +
+                Math.cos(lat1 * Math.PI / 180) *
+                Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) ** 2;
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         }
 
         // Process batch of points through snap endpoint
@@ -916,146 +1438,164 @@
 
             const rawLat = parseFloat(position.coords.latitude);
             const rawLon = parseFloat(position.coords.longitude);
-            const acc    = position.coords.accuracy || 20;
+            const acc = position.coords.accuracy || 20;
 
             if (isNaN(rawLat) || isNaN(rawLon)) return;
 
-            // Apply motion filter for smooth movement
-            const [filtLat, filtLon] = motionFilter.update(
-                rawLat, rawLon, acc
-            );
+            // Apply strict Kalman-style motion filter
+            const [filtLat, filtLon] = motionFilter.update(rawLat, rawLon, acc);
 
-            // Confidence check — reject impossible jumps
-            if (!calculateConfidence(
-                { lat: filtLat, lon: filtLon }, lastPoint
-            )) return;
-
-            // Distance filter — ignore micro movements < 3m
-            if (lastPoint) {
-                const dist = haversineJS(
-                    lastPoint.lat, lastPoint.lon, filtLat, filtLon
-                );
-                if (dist < 3) return;
-            }
+            // Confidence check against impossible jumps
+            if (!calculateConfidence({ lat: filtLat, lon: filtLon }, lastPoint)) return;
 
             const currentPoint = { lat: filtLat, lon: filtLon };
 
-            // ── LAYER 1: Draw live point IMMEDIATELY ──────
-            // Zero lag — user sees movement right away
-            if (livePolyline) {
-                livePolyline.getPath().push(
-                    new google.maps.LatLng(filtLat, filtLon)
-                );
-            }
-
-            // Place start marker on very first point
-            if (!startMarker && !lastPoint) {
-                startMarker = placeMarker(
-                    filtLat, filtLon, '#34A853', 'Start', 1.2
-                );
-            }
-
-            // Update moving navigation marker immediately
-            if (!movingMarker) {
-                movingMarker = createNavigationMarker(
-                    filtLat, filtLon
-                );
-            } else if (lastPoint) {
-                updateMarkerHeading(lastPoint, currentPoint);
-                smoothMoveMarker(
-                    movingMarker,
-                    parseFloat(lastPoint.lat),
-                    parseFloat(lastPoint.lon),
-                    filtLat, filtLon, 800
-                );
-            }
-
-            // Update distance using raw movement
+            // Adaptive speed detection for profiles
             if (lastPoint) {
-                const seg = haversineJS(
-                    lastPoint.lat, lastPoint.lon,
-                    filtLat, filtLon
-                );
-                if (!isNaN(seg) && isFinite(seg) && seg < 200) {
-                    totalDistanceMeters += seg;
+                const dist = haversineJS(lastPoint.lat, lastPoint.lon, filtLat, filtLon);
+                const timeDiff = (Date.now() - (lastPoint.timestamp || Date.now())) / 1000 || 1;
+                const speedMs = dist / timeDiff;
+
+                // Ignore erratic micro-movements based on profile filter
+                if (dist < PROFILES[currentProfile].distFilter) return;
+
+                detectProfileFromSpeed(speedMs);
+
+                if (!isNaN(dist) && isFinite(dist) && dist < 200) {
+                    totalDistanceMeters += dist;
                     updateDistanceDisplay();
                 }
             }
 
-            lastPoint = currentPoint;
+            currentPoint.timestamp = Date.now();
+            routePoints.push(currentPoint); // Primary save array
             updatePointsCount(routePoints.length);
+
+            // ── LAYER 1: Immediate Visual Feedback (Zero Wait) ──
+            if (livePolyline) {
+                livePolyline.getPath().push(new google.maps.LatLng(filtLat, filtLon));
+            }
+
+            if (!startMarker && !lastPoint) {
+                startMarker = placeMarker(filtLat, filtLon, '#34A853', 'Start', 1.2);
+            }
+
+            if (!movingMarker) {
+                movingMarker = createNavigationMarker(filtLat, filtLon);
+            } else if (lastPoint) {
+                updateMarkerHeading(lastPoint, currentPoint);
+                smoothMoveMarker(
+                    movingMarker,
+                    parseFloat(lastPoint.lat), parseFloat(lastPoint.lon),
+                    filtLat, filtLon, 800
+                );
+            }
+
+            lastPoint = currentPoint;
             map.panTo({ lat: filtLat, lng: filtLon });
 
-            // ── LAYER 2: Road path every 25 meters ────────
-            // Non-blocking — fires in background
-            // Does NOT cause any visible lag
-            if (!lastAnchor) {
-                lastAnchor = currentPoint;
-                anchorPoints.push(currentPoint);
-                routePoints.push(currentPoint);
+            // Only log in development — never in production
+            if (window.location.hostname === 'localhost' &&
+                routePoints.length % 10 === 0) {
+                console.log(
+                    `[GPS] pts:${routePoints.length}`,
+                    `live:${livePolyline?.getPath().getLength()}`,
+                    `snapped:${snappedPolyline?.getPath().getLength()}`,
+                    `queue:${snapQueue.length}`
+                );
+            }
+
+            // Auto-rotate map to face travel direction
+            // when compass is not active
+            if (routePoints.length >= 2 && !compassEnabled) {
+                const prev = routePoints[routePoints.length - 2];
+                updateMapHeadingFromTravel(prev, currentPoint);
+            }
+
+            // ── LAYER 2: Queue-Based Snap Trigger ──
+            // Add index to snap queue for visual road snapping
+            snapQueue.push(routePoints.length - 1);
+
+            // Fire snap worker every 3 points — not on distance
+            if (!snapRunning && snapQueue.length >= 3) {
+                runSnapWorker(currentProfile || PROFILES.car);
+            }
+        }
+
+        async function runSnapWorker(profile) {
+            if (snapQueue.length < 2) return;
+            snapRunning = true;
+
+            // Grab first and last queued indices as origin/destination
+            const firstIdx = snapQueue[0];
+            const lastIdx = snapQueue[snapQueue.length - 1];
+            const origin = routePoints[firstIdx];
+            const destination = routePoints[lastIdx];
+            snapQueue = []; // Clear processed queue
+
+            if (!origin || !destination) {
+                snapRunning = false;
                 return;
             }
 
-            const distFromAnchor = haversineJS(
-                lastAnchor.lat, lastAnchor.lon,
-                filtLat, filtLon
-            );
+            try {
+                const csrf = getValidCsrfToken();
+                if (!csrf || !isOnline) return;
 
-            if (distFromAnchor >= ANCHOR_DIST_M) {
-                const origin      = { ...lastAnchor };
-                const destination = { ...currentPoint };
-                lastAnchor        = currentPoint;
-                anchorPoints.push(currentPoint);
+                const res = await fetch('/get_road_path/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
+                    body: JSON.stringify({
+                        origin,
+                        destination,
+                        mode: (profile && PROFILES[profile])
+                            ? PROFILES[profile].directionsMode
+                            : 'DRIVE'
+                    })
+                });
 
-                // Fire road path request in background
-                // Using async IIFE so it never blocks GPS callback
-                ;(async () => {
-                    try {
-                        const csrf = getValidCsrfToken();
-                        if (!csrf) return;
+                if (res.ok) {
+                    const data = await res.json();
+                    const roadPoints = data.path || [];
 
-                        const res = await fetch('/get_road_path/', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type':  'application/json',
-                                'X-CSRFToken':   csrf
-                            },
-                            body: JSON.stringify({ origin, destination })
-                        });
+                    // Debug log — remove after confirming fix
+                    if (window.location.hostname === 'localhost') {
+                        console.log(
+                            '[SnapWorker]',
+                            'source:', data.source || 'unknown',
+                            'road points:', roadPoints.length,
+                            'sample:', roadPoints[0] || 'none',
+                            'accumulator:', roadPathAccumulator.length
+                        );
+                    }
 
-                        if (!handleResponseAuth(res)) return;
-                        if (!res.ok) return;
-
-                        const data = await res.json();
-                        const roadPoints = data.path || [];
-
-                        if (roadPoints.length < 2) return;
-
-                        // Add road geometry points to routePoints
+                    if (roadPoints && roadPoints.length > 1) {
                         roadPoints.forEach(p => {
-                            const rLat = parseFloat(p.lat);
-                            const rLon = parseFloat(p.lon);
-                            if (!isNaN(rLat) && !isNaN(rLon)) {
-                                routePoints.push({ lat: rLat, lon: rLon });
-                            }
+                            const coord = extractLatLon(p);
+                            if (coord) roadPathAccumulator.push(coord);
                         });
 
-                        // Redraw snapped polyline with road geometry
-                        // This replaces straight lines with real roads
-                        if (snappedPolyline && routePoints.length > 1) {
+                        if (snappedPolyline && roadPathAccumulator.length > 1) {
                             snappedPolyline.setPath(
-                                routePoints.map(p => ({
-                                    lat: parseFloat(p.lat),
-                                    lng: parseFloat(p.lon)
-                                }))
+                                roadPathAccumulator.map(p => ({ lat: p.lat, lng: p.lon }))
                             );
                         }
-
-                    } catch(e) {
-                        // Silent fail — live tracking continues unaffected
-                        console.warn('Road path fetch failed:', e.message);
                     }
-                })();
+                }
+            } catch (e) {
+                console.warn('Snap worker failed (ignoring):', e.message);
+            } finally {
+                snapRunning = false;
+                // Only retry if tracking is still active
+                // Prevents post-session snap requests
+                if (isTracking &&
+                    snapQueue.length >= 3 &&
+                    isOnline) {
+                    setTimeout(
+                        () => runSnapWorker(currentProfile || 'car'),
+                        300
+                    );
+                }
             }
         }
 
@@ -1064,53 +1604,286 @@
         }
 
         // ══════════════════════════════════════════════
-        // PART 8 — Start / Stop Tracking
+        // PART 8 — Offline DB & Sync
+        // ══════════════════════════════════════════════
+
+        // DB version 2: adds 'synced' index for efficient
+        // querying of unsynced routes
+        let db;
+        const dbPromise = new Promise((resolve, reject) => {
+            const request = indexedDB.open('GPSTrackerOffline', 2);
+
+            request.onupgradeneeded = (e) => {
+                const idb = e.target.result;
+                let store;
+                if (!idb.objectStoreNames.contains('routes')) {
+                    store = idb.createObjectStore('routes', { autoIncrement: true });
+                } else {
+                    store = e.target.transaction.objectStore('routes');
+                }
+                // Index for fast unsynced lookups
+                if (!store.indexNames.contains('by_synced')) {
+                    store.createIndex('by_synced', 'synced', { unique: false });
+                }
+            };
+
+            request.onsuccess = (e) => {
+                db = e.target.result;
+                resolve(db);
+            };
+            request.onerror = (e) => {
+                console.error('IndexedDB Error:', e);
+                reject(e);
+            };
+        });
+
+        /**
+         * Save route to IndexedDB with synced=0 flag.
+         * Resolves ONLY after the transaction fully commits
+         * (not just after the add request succeeds).
+         */
+        function saveRouteToIndexedDB(points, profile, serverId) {
+            return new Promise((resolve, reject) => {
+                if (!db) return resolve(null);
+                try {
+                    const tx = db.transaction('routes', 'readwrite');
+                    const store = tx.objectStore('routes');
+                    const record = {
+                        points,
+                        profile: profile || 'car',
+                        server_id: serverId || null,
+                        synced: serverId ? 1 : 0,
+                        date: Date.now()
+                    };
+                    const req = store.add(record);
+
+                    // Wait for TRANSACTION commit, not just request
+                    tx.oncomplete = () => resolve(req.result);
+                    tx.onerror = () => reject(tx.error);
+                    tx.onabort = () => reject(tx.error || new Error('Transaction aborted'));
+                } catch (e) {
+                    console.error('saveRouteToIndexedDB error:', e);
+                    reject(e);
+                }
+            });
+        }
+
+        /**
+         * Delete route from IndexedDB by server ID.
+         * Uses synchronous cursor — safe for IndexedDB.
+         */
+        async function deleteRouteFromIndexedDB(routeId) {
+            if (!db) return;
+            return new Promise((resolve) => {
+                try {
+                    const tx = db.transaction('routes', 'readwrite');
+                    const store = tx.objectStore('routes');
+                    const req = store.openCursor();
+                    req.onsuccess = (e) => {
+                        const cursor = e.target.result;
+                        if (cursor) {
+                            if (String(cursor.value.server_id) === String(routeId)) {
+                                cursor.delete();
+                            }
+                            cursor.continue();
+                        } else {
+                            resolve();
+                        }
+                    };
+                    req.onerror = () => resolve();
+                    tx.onerror = () => resolve();
+                } catch (e) {
+                    console.warn('IndexedDB delete failed:', e);
+                    resolve();
+                }
+            });
+        }
+
+        /**
+         * Collect ALL unsynced records from IndexedDB
+         * synchronously (no await inside cursor).
+         * Returns array of {key, value} objects.
+         */
+        function getAllUnsyncedRoutes() {
+            return new Promise((resolve) => {
+                if (!db) return resolve([]);
+                try {
+                    const tx = db.transaction('routes', 'readonly');
+                    const store = tx.objectStore('routes');
+                    const records = [];
+                    const req = store.openCursor();
+
+                    req.onsuccess = (e) => {
+                        const cursor = e.target.result;
+                        if (cursor) {
+                            // Include records without synced flag
+                            // (legacy v1 records) or synced === 0
+                            if (!cursor.value.synced) {
+                                records.push({
+                                    key: cursor.key,
+                                    value: cursor.value
+                                });
+                            }
+                            cursor.continue();
+                        } else {
+                            resolve(records);
+                        }
+                    };
+                    req.onerror = () => resolve([]);
+                    tx.onerror = () => resolve([]);
+                } catch (e) {
+                    console.error('getAllUnsyncedRoutes error:', e);
+                    resolve([]);
+                }
+            });
+        }
+
+        /**
+         * Mark a route as synced in IndexedDB.
+         * Updates the synced flag and stores the server ID.
+         */
+        function markRouteSynced(key, serverId) {
+            return new Promise((resolve) => {
+                if (!db) return resolve();
+                try {
+                    const tx = db.transaction('routes', 'readwrite');
+                    const store = tx.objectStore('routes');
+                    const getReq = store.get(key);
+
+                    getReq.onsuccess = () => {
+                        const record = getReq.result;
+                        if (record) {
+                            record.synced = 1;
+                            record.server_id = serverId;
+                            store.put(record, key);
+                        }
+                    };
+                    tx.oncomplete = () => resolve();
+                    tx.onerror = () => resolve();
+                } catch (e) {
+                    resolve();
+                }
+            });
+        }
+
+        /**
+         * Sync all unsynced routes to the server.
+         * SAFE: collects records synchronously first,
+         * then syncs each one in a regular async loop.
+         * Does NOT use async/await inside cursor callbacks.
+         */
+        async function syncOfflineRoutes() {
+            if (!isOnline || !db) return;
+
+            const records = await getAllUnsyncedRoutes();
+            if (records.length === 0) return;
+
+            console.log(`[Sync] Found ${records.length} unsynced route(s)`);
+
+            let syncedCount = 0;
+            for (const { key, value } of records) {
+                if (!isOnline) break; // Stop if we go offline mid-sync
+
+                const csrf = getValidCsrfToken();
+                if (!csrf) {
+                    console.warn('[Sync] No CSRF token — aborting');
+                    break;
+                }
+
+                try {
+                    const res = await fetch('/save_route/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrf
+                        },
+                        body: JSON.stringify({
+                            points: value.points,
+                            profile: value.profile || 'car'
+                        })
+                    });
+
+                    if (res.ok) {
+                        const data = await res.json();
+                        await markRouteSynced(key, data.route_id);
+                        syncedCount++;
+                        console.log(`[Sync] Route synced (${syncedCount}/${records.length})`);
+                    } else {
+                        console.warn(`[Sync] Server returned ${res.status} — skipping`);
+                    }
+                } catch (err) {
+                    console.error('[Sync] Network error — stopping:', err.message);
+                    break; // Don't try remaining if network failed
+                }
+            }
+
+            if (syncedCount > 0) {
+                console.log(`[Sync] Complete: ${syncedCount} route(s) uploaded`);
+            }
+        }
+
+        // ══════════════════════════════════════════════
+        // PART 9 — Start / Stop Tracking
         // ══════════════════════════════════════════════
 
         function startTracking() {
-            // Reset all state
-            routePoints      = [];
-            anchorPoints     = [];
-            roadPathBuffer   = [];
-            lastAnchor       = null;
+            // Hard reset ALL arrays to prevent state pollution across trips
+            routePoints = [];
+            anchorPoints = [];
+            roadPathBuffer = [];
+            roadPathAccumulator = [];
+            snapQueue = [];
+            snapRunning = false;
+            lastAnchor = null;
+            lastPoint = null;
+            window._isSnapping = false;
+
             motionFilter.reset();
             resetStats();
 
-            // Remove existing layers
-            if (livePolyline)    { livePolyline.setMap(null);    livePolyline    = null; }
+            // Purge DOM elements
+            if (livePolyline) { livePolyline.setMap(null); livePolyline = null; }
             if (snappedPolyline) { snappedPolyline.setMap(null); snappedPolyline = null; }
-            if (routePolyline)   { routePolyline.setMap(null);   routePolyline   = null; }
-            startMarker  = removeMarker(startMarker);
-            endMarker    = removeMarker(endMarker);
+            if (routePolyline) { routePolyline.setMap(null); routePolyline = null; }
+
+            startMarker = removeMarker(startMarker);
+            endMarker = removeMarker(endMarker);
             movingMarker = removeMarker(movingMarker);
 
             const card = document.getElementById('route-summary');
             if (card) card.remove();
 
-            // LAYER 1 — Visible live tracking line
-            // Shows immediately as user moves
+            // Reset map heading to North on new session
+            if (map) map.setHeading(0);
+            compassEnabled = false;
+            if (deviceOrientHandler) {
+                window.removeEventListener(
+                    'deviceorientation', deviceOrientHandler, true
+                );
+                deviceOrientHandler = null;
+            }
+            const compassSvg = document.getElementById('compass-svg');
+            if (compassSvg) compassSvg.style.transform = 'rotate(0deg)';
+
+            // Live line (Raw GPS) — faint background (made invisible)
             livePolyline = new google.maps.Polyline({
-                path:          [],
-                geodesic:      true,
-                strokeColor:   '#4285F4',
-                strokeOpacity: 0.35,  // Faint — shows raw GPS
-                strokeWeight:  4,
-                map:           map
+                path: [], geodesic: true,
+                strokeColor: PROFILES[currentProfile] ? PROFILES[currentProfile].color : '#4285F4',
+                strokeOpacity: 0, strokeWeight: 0,
+                map: map, zIndex: 1
             });
 
-            // LAYER 2 — Road-accurate snapped line
-            // Updates in background as road paths return
+            // Snapped line (Roads) — solid foreground
             snappedPolyline = new google.maps.Polyline({
-                path:          [],
-                geodesic:      true,
-                strokeColor:   '#1a73e8',  // Slightly darker blue
-                strokeOpacity: 1.0,        // Solid — this is the true route
-                strokeWeight:  6,
-                map:           map,
-                zIndex:        10          // Renders on top of live line
+                path: [], geodesic: true,
+                strokeColor: PROFILES[currentProfile] ? PROFILES[currentProfile].color : '#1a73e8',
+                strokeOpacity: 1.0, strokeWeight: 6,
+                map: map, zIndex: 5
             });
 
             setTrackingStatus(true);
+            applyProfile(); // Ensures UI shows current profile
+
             startDurationTimer();
             isTracking = true;
 
@@ -1119,14 +1892,15 @@
                 return;
             }
 
+            // Using high sampling rate — filter will handle drops
             watchId = navigator.geolocation.watchPosition(
                 onGPSSuccess, onGPSError,
-                {
-                    enableHighAccuracy: true,
-                    timeout:            10000,
-                    maximumAge:         0
-                }
+                { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
             );
+
+            // Acquire screen wake lock to prevent sleep
+            requestWakeLock();
+            showTrackingGuidance();
         }
 
         async function stopTracking() {
@@ -1142,52 +1916,132 @@
 
             movingMarker = removeMarker(movingMarker);
 
-            // Wait briefly for any in-flight road path
-            // requests to complete before saving
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            // Step 2 — Flush remaining snap queue
+            // This ensures the final GPS segment has
+            // road geometry before we save
+            if (snapQueue.length > 0 && routePoints.length >= 2 && isOnline) {
+                try {
+                    const firstIdx = snapQueue[0];
+                    const lastIdx = snapQueue[snapQueue.length - 1];
+                    const origin = routePoints[firstIdx];
+                    const dest = routePoints[lastIdx];
+
+                    // Safety check — confirm indices resolve to points
+                    if (!origin || !dest) {
+                        console.warn(
+                            'Final flush: invalid indices',
+                            firstIdx, lastIdx,
+                            'routePoints length:', routePoints.length
+                        );
+                        snapQueue = [];
+                    } else {
+                        const csrf = getValidCsrfToken();
+                        if (csrf) {
+                            const res = await fetch('/get_road_path/', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRFToken': csrf
+                                },
+                                body: JSON.stringify({
+                                    origin,
+                                    destination: dest,
+                                    mode: (currentProfile && PROFILES[currentProfile])
+                                        ? PROFILES[currentProfile].directionsMode
+                                        : 'DRIVE'
+                                })
+                            });
+
+                            if (res.ok) {
+                                const data = await res.json();
+                                const finalPoints = data.path || [];
+
+                                finalPoints.forEach(p => {
+                                    const coord = extractLatLon(p);
+                                    if (coord) {
+                                        roadPathAccumulator.push(coord);
+                                    }
+                                });
+
+                                // Redraw snapped polyline with complete road geometry
+                                if (snappedPolyline && roadPathAccumulator.length > 1) {
+                                    snappedPolyline.setPath(
+                                        roadPathAccumulator.map(p => ({
+                                            lat: p.lat,
+                                            lng: p.lon
+                                        }))
+                                    );
+                                }
+
+                                console.log(
+                                    'Final snap flush:',
+                                    finalPoints.length, 'road points added',
+                                    'Total accumulator:',
+                                    roadPathAccumulator.length
+                                );
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Final snap flush failed:', e.message);
+                }
+                snapQueue = [];
+            }
+
+            // Give background snap worker time to finish
+            await new Promise(resolve => setTimeout(resolve, 500));
 
             if (routePoints.length === 0) {
                 alert('No route points recorded.');
                 return;
             }
 
-            // Place end marker at last known position
             if (lastPoint) {
-                const endLat = parseFloat(lastPoint.lat);
-                const endLon = parseFloat(lastPoint.lon);
-                if (!isNaN(endLat) && !isNaN(endLon)) {
-                    endMarker = placeMarker(
-                        endLat, endLon, '#EA4335', 'End Point', 1.2
-                    );
-                }
+                endMarker = placeMarker(
+                    lastPoint.lat, lastPoint.lon, '#EA4335', 'End Point', 1.2
+                );
             }
 
-            // Save road-snapped route to backend
-            const csrf = getValidCsrfToken();
-            if (!csrf) {
-                alert('Security token missing. Please refresh.');
-                return;
+            // Release wake lock when tracking stops
+            releaseWakeLock();
+
+            // Prefer road-snapped geometry for saving
+            // Fall back to raw GPS only if snapping never ran
+            const pointsForStorage = roadPathAccumulator.length >= 2
+                ? roadPathAccumulator
+                : routePoints;
+
+            if (roadPathAccumulator.length < 2) {
+                console.warn('Saving raw GPS — road snap unavailable');
+            } else {
+                console.log(
+                    'Saving route:',
+                    'road points:', roadPathAccumulator.length,
+                    'raw points:', routePoints.length,
+                    'using:', roadPathAccumulator.length >= 2 ? 'roadPathAccumulator' : 'routePoints (fallback)'
+                );
             }
 
+            // 1. ALWAYS SAVE TO INDEXEDDB FIRST (Handles offline by default)
             try {
-                const res = await fetch('/save_route/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken':  csrf
-                    },
-                    body: JSON.stringify({ points: routePoints })
-                });
-                if (!handleResponseAuth(res)) return;
-                if (res.ok) {
-                    console.log('Route saved successfully');
-                } else {
-                    const err = await res.json();
-                    alert('Save failed: ' + (err.message || err.error));
-                }
-            } catch(e) {
-                console.error('Save error:', e);
+                await saveRouteToIndexedDB(pointsForStorage, currentProfile || 'car');
+                console.log('Route committed to IndexedDB');
+            } catch (dbErr) {
+                console.error('IndexedDB save failed:', dbErr);
             }
+
+            // 2. IF ONLINE, SYNC AFTER IndexedDB COMMIT
+            // Small delay ensures the DB transaction is fully
+            // flushed before we open a new read transaction
+            if (isOnline) {
+                await new Promise(r => setTimeout(r, 100));
+                await syncOfflineRoutes();
+            } else {
+                alert('Saved locally. Will sync when back online.');
+            }
+
+            // Final reset of accumulator for the session
+            roadPathAccumulator = [];
         }
 
         // ══════════════════════════════════════════════
@@ -1215,9 +2069,49 @@
                 data.routes.forEach(route => {
                     const card = document.createElement('div');
                     card.className = 'history-route-card';
+                    card.dataset.routeId = route.id;
                     card.innerHTML = `
-          <div class="history-route-title">
-            Route — ${route.created_at}
+          <div style="display:flex; justify-content:space-between;
+                      align-items:flex-start; margin-bottom:8px;">
+            <div class="history-route-title">
+              Route — ${route.created_at}
+            </div>
+            <!-- Delete button -->
+            <button
+              class="delete-route-btn"
+              data-route-id="${route.id}"
+              onclick="deleteRoute(${route.id}, this)"
+              title="Delete this route permanently"
+              style="
+                background: transparent;
+                border: 1px solid rgba(234,67,53,0.3);
+                color: #EA4335;
+                border-radius: 6px;
+                padding: 4px 8px;
+                font-size: 11px;
+                cursor: pointer;
+                flex-shrink: 0;
+                transition: all 0.2s;
+                display: flex;
+                align-items: center;
+                gap: 4px;
+                font-family: var(--font-body);
+              "
+              onmouseover="this.style.background='rgba(234,67,53,0.12)'"
+              onmouseout="this.style.background='transparent'"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24"
+                   fill="none" stroke="currentColor"
+                   stroke-width="2">
+                <polyline points="3,6 5,6 21,6"/>
+                <path d="M19,6l-1,14a2 2 0 01-2 2H8
+                         a2 2 0 01-2-2L5,6"/>
+                <path d="M10,11v6M14,11v6"/>
+                <path d="M9,6V4a1 1 0 011-1h4
+                         a1 1 0 011 1v2"/>
+              </svg>
+              Delete
+            </button>
           </div>
           <div class="history-route-stats">
             <div class="history-stat">
@@ -1256,6 +2150,85 @@
             } catch (e) { console.error('History error:', e); }
         }
 
+        async function deleteRoute(routeId, btnEl) {
+            const confirmed = confirm(
+                'Delete this route permanently?\n\n' +
+                'This cannot be undone. The route will be\n' +
+                'removed from the server database.'
+            );
+            if (!confirmed) return;
+
+            if (btnEl) {
+                btnEl.disabled = true;
+                btnEl.textContent = 'Deleting...';
+                btnEl.style.opacity = '0.6';
+            }
+
+            const csrf = getValidCsrfToken();
+            if (!csrf) {
+                alert('Security token missing. Please refresh.');
+                return;
+            }
+
+            try {
+                const res = await fetch(`/delete_route/${routeId}/`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf }
+                });
+
+                if (res.status === 401 || res.status === 403) {
+                    alert('Session expired or access denied.');
+                    return;
+                }
+
+                if (res.ok) {
+                    const card = btnEl ? btnEl.closest('.history-route-card') : document.querySelector(`[data-route-id="${routeId}"]`)?.closest('.history-route-card');
+                    if (card) {
+                        card.style.transition = 'all 0.3s ease';
+                        card.style.opacity = '0';
+                        card.style.height = card.offsetHeight + 'px';
+                        card.style.overflow = 'hidden';
+
+                        setTimeout(() => {
+                            card.style.height = '0';
+                            card.style.padding = '0';
+                            card.style.margin = '0';
+                            card.style.border = 'none';
+                        }, 300);
+                        setTimeout(() => { card.remove(); }, 600);
+                    }
+
+                    await deleteRouteFromIndexedDB(routeId);
+
+                    const summaryCard = document.getElementById('route-summary');
+                    if (summaryCard && String(summaryCard.dataset.routeId) === String(routeId)) {
+                        clearHistoryRoute();
+                    }
+
+                    console.log(`Route ${routeId} deleted.`);
+                } else {
+                    const err = await res.json().catch(() => ({}));
+                    alert('Delete failed: ' + (err.error || err.message || 'Unknown error'));
+                    if (btnEl) {
+                        btnEl.disabled = false;
+                        btnEl.innerHTML = `
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <polyline points="3,6 5,6 21,6"/>
+                          <path d="M19,6l-1,14a2 2 0 01-2 2H8 a2 2 0 01-2-2L5,6"/>
+                        </svg> Delete`;
+                        btnEl.style.opacity = '1';
+                    }
+                }
+            } catch (e) {
+                console.error('Delete error:', e);
+                alert('Network error. Please try again.');
+                if (btnEl) {
+                    btnEl.disabled = false;
+                    btnEl.style.opacity = '1';
+                }
+            }
+        }
+
         function closeHistoryModal() {
             document.getElementById('history-modal').style.display = 'none';
         }
@@ -1277,25 +2250,10 @@
             // for Google Maps — handles all possible formats
             const path = [];
             rawPoints.forEach((p, i) => {
-                let lat, lon;
-                try {
-                    if (Array.isArray(p)) {
-                        lat = parseFloat(p[0]);
-                        lon = parseFloat(p[1]);
-                    } else if (typeof p === 'object') {
-                        lat = parseFloat(
-                            p.lat ?? p.latitude ?? p[0] ?? 0
-                        );
-                        lon = parseFloat(
-                            p.lon ?? p.lng ?? p.longitude ?? p[1] ?? 0
-                        );
-                    }
-                    if (!isNaN(lat) && !isNaN(lon) &&
-                        lat >= -90 && lat <= 90 &&
-                        lon >= -180 && lon <= 180) {
-                        path.push({ lat, lng: lon });
-                    }
-                } catch (e) {
+                const coord = extractLatLon(p);
+                if (coord) {
+                    path.push({ lat: coord.lat, lng: coord.lon });
+                } else {
                     console.warn(`Skipping invalid point at index ${i}:`, p);
                 }
             });
@@ -1309,10 +2267,11 @@
             routePolyline = new google.maps.Polyline({
                 path: path,
                 geodesic: true,
-                strokeColor: '#4285F4',
-                strokeOpacity: 0.9,
-                strokeWeight: 5,
-                map: map
+                strokeColor: routeData.profile && PROFILES[routeData.profile] ? PROFILES[routeData.profile].color : '#1a73e8',
+                strokeOpacity: 1.0,
+                strokeWeight: routeData.profile && PROFILES[routeData.profile] ? PROFILES[routeData.profile].weight || 6 : 6,
+                map: map,
+                zIndex: 10
             });
 
             // RED start marker
@@ -1352,6 +2311,7 @@
             const card = document.createElement('div');
             card.id = 'route-summary';
             card.className = 'route-summary-card';
+            card.dataset.routeId = routeData.id;
             card.innerHTML = `
       <div class="summary-header">
         <span class="summary-title">Viewing Saved Route</span>
@@ -1421,6 +2381,17 @@
             if (historyBtn) historyBtn.addEventListener(
                 'click', () => viewHistory(1)
             );
+
+            // Ensure initial profile UI matches variables
+            detectProfileFromSpeed(0);
+
+            // Wait for IndexedDB to be ready, then sync
+            // any routes that failed to upload previously
+            dbPromise.then(() => {
+                setTimeout(() => {
+                    if (isOnline) syncOfflineRoutes();
+                }, 2000);
+            }).catch(() => { });
         });
     </script>
     <script
@@ -1440,6 +2411,12 @@
             Live Route Tracker
         </div>
         <div class="navbar-right">
+            <div id="network-status-dot" style="width:8px; height:8px;
+                        border-radius:50%;
+                        background:#34A853;
+                        box-shadow:0 0 6px #34A853;
+                        transition: all 0.3s;" title="Network status">
+            </div>
             <div class="user-badge">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
@@ -1447,7 +2424,10 @@
                 </svg>
                 {{ request.user.username }}
             </div>
-            <a href="/logout/" class="btn-logout">Logout</a>
+            <form method="POST" action="/logout/" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn-logout">Logout</button>
+            </form>
         </div>
     </nav>
 
@@ -1476,6 +2456,50 @@
             <div class="stat-card">
                 <span class="stat-label">Duration</span>
                 <span class="stat-value" id="trip-duration">00:00</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Screen</span>
+                <span class="stat-value" id="wake-lock-indicator"
+                    style="font-size:12px; padding:3px 8px; border-radius:10px; border:1px solid var(--border); color:var(--text-secondary);">
+                    💤 Screen may sleep
+                </span>
+            </div>
+        </div>
+
+        <div class="profile-selector"
+            style="margin-bottom: 16px; background: var(--bg-card); padding: 16px; border-radius: var(--radius); border: 1px solid var(--border);">
+            <div class="profile-header">
+                <span class="profile-label" style="font-size: 14px; font-weight: 600;">Travel Mode</span>
+                <span id="auto-profile-badge" style="font-size:11px;
+                             padding:3px 10px;
+                             border-radius:12px;
+                             border:1px solid var(--border);
+                             font-weight:600;
+                             transition: all 0.3s;">
+                    Auto-detecting...
+                </span>
+            </div>
+
+            <div class="profile-options">
+                <button class="profile-btn" data-profile="walking" onclick="setProfile('walking',this)">
+                    🚶 Walking
+                </button>
+                <button class="profile-btn" data-profile="cycling" onclick="setProfile('cycling',this)">
+                    🚴 Cycling
+                </button>
+                <button class="profile-btn" data-profile="motorcycle" onclick="setProfile('motorcycle',this)">
+                    🏍️ Motorcycle
+                </button>
+                <button class="profile-btn active" data-profile="car" onclick="setProfile('car',this)">
+                    🚗 Car
+                </button>
+            </div>
+
+            <div id="profile-auto-note" style="font-size:11px;
+                        color:var(--text-secondary);
+                        margin-top:6px;">
+                Profile auto-switches based on detected speed.
+                Tap to override manually.
             </div>
         </div>
 
@@ -1513,6 +2537,36 @@
         <!-- Map -->
         <div class="map-wrapper">
             <div id="map"></div>
+            <div id="compass-btn" onclick="toggleCompass()" title="Toggle map rotation" style="
+                   position: absolute;
+                   top: 12px;
+                   left: 12px;
+                   width: 44px;
+                   height: 44px;
+                   background: rgba(13,17,23,0.90);
+                   backdrop-filter: blur(8px);
+                   border: 1.5px solid rgba(255,255,255,0.15);
+                   border-radius: 50%;
+                   cursor: pointer;
+                   display: flex;
+                   align-items: center;
+                   justify-content: center;
+                   z-index: 100;
+                   box-shadow: 0 2px 12px rgba(0,0,0,0.4);
+                   transition: border-color 0.2s, transform 0.1s;
+                 ">
+                <svg id="compass-svg" width="28" height="28" viewBox="0 0 28 28"
+                    style="transition: transform 0.2s ease;">
+                    <circle cx="14" cy="14" r="12" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1" />
+                    <text x="14" y="6" text-anchor="middle" fill="#EA4335" font-size="5" font-weight="700"
+                        font-family="Fira Code, monospace">N</text>
+                    <text x="14" y="25" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="4"
+                        font-family="Fira Code, monospace">S</text>
+                    <polygon points="14,3 16,14 14,12 12,14" fill="#EA4335" />
+                    <polygon points="14,25 16,14 14,16 12,14" fill="rgba(255,255,255,0.6)" />
+                    <circle cx="14" cy="14" r="2" fill="rgba(255,255,255,0.8)" />
+                </svg>
+            </div>
         </div>
 
         <!-- Route summary card injected here dynamically -->
@@ -1548,6 +2602,16 @@
             <div id="history-list"></div>
         </div>
     </div>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('Service Worker registered'))
+                    .catch(err => console.warn('SW registration failed:', err));
+            });
+        }
+    </script>
 </body>
 
 </html>
